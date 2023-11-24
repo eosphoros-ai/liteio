@@ -28,7 +28,10 @@ Overall, LiteIO's architecture provides a scalable and efficient approach to clo
 
 ## Quick Start
 
-TODO
+The Quick Start Guide helps you to seup a local K8S cluster and deploy NexusProject in it.
+
+- [Quick Start](doc/en/quick-start.md)
+- [Setup K8S by kubeadm](doc/en/kubeadm-install.md)
 
 ## Performance Benchmark
 
@@ -84,9 +87,8 @@ However, it is important to note that LiteIO does not currently support data rep
 
 ## Advanced Topics
 
-- [Build Guide](doc/build.md)
-- [How to Customize Plugins](doc/plugins.md)
-- [Quick Start](doc/quick-start.md)
+- [Build Guide](doc/en/build.md)
+- [How to Customize Plugins](doc/en/plugins.md)
 
 
 ## Roadmap
