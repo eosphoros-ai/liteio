@@ -1,0 +1,11 @@
+.vscode
+_build
+agent.tar.gz
+bin
+coverage.txt
+totalCoverage.md
+hack/webapi
+hack/base_image
+hack/compile_image
+hack/sql
+.aci.yml

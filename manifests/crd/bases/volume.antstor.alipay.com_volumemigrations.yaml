@@ -1,0 +1,221 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.12.1
+  name: volumemigrations.volume.antstor.alipay.com
+spec:
+  group: volume.antstor.alipay.com
+  names:
+    kind: VolumeMigration
+    listKind: VolumeMigrationList
+    plural: volumemigrations
+    singular: volumemigration
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.sourceVolume.name
+      name: source
+      type: string
+    - jsonPath: .spec.destVolume.name
+      name: target
+      type: string
+    - jsonPath: .status.phase
+      name: phase
+      type: string
+    - jsonPath: .status.status
+      name: status
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: age
+      type: date
+    name: v1
+    schema:
+      openAPIV3Schema:
+        description: VolumeMigration is the Schema for the VolumeMigration API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              destVolume:
+                description: DestVolume is the destination volume, where data will
+                  flow
+                properties:
+                  hostNodeId:
+                    type: string
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  spdk:
+                    properties:
+                      addrFam:
+                        type: string
+                      address:
+                        type: string
+                      bdevName:
+                        type: string
+                      nsUuid:
+                        type: string
+                      sn:
+                        type: string
+                      subsysNqn:
+                        type: string
+                      svcID:
+                        type: string
+                      transType:
+                        type: string
+                    required:
+                    - addrFam
+                    - address
+                    - bdevName
+                    - nsUuid
+                    - sn
+                    - subsysNqn
+                    - svcID
+                    - transType
+                    type: object
+                  targetNodeId:
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+              migrationInfo:
+                description: MigrationInfo has detailed information about migration
+                properties:
+                  autoSwitch:
+                    properties:
+                      enabled:
+                        type: boolean
+                      status:
+                        default: Unknown
+                        enum:
+                        - Unknown
+                        - Success
+                        - Error
+                        type: string
+                    type: object
+                  hostConnectStatus:
+                    default: Unknown
+                    enum:
+                    - Unknown
+                    - Connected
+                    - Disconnected
+                    type: string
+                  jobProgress:
+                    properties:
+                      dstBdev:
+                        type: string
+                      is_last_round:
+                        description: working_round
+                        type: string
+                      ms_elapsed:
+                        type: integer
+                      roundPassed:
+                        type: integer
+                      srcBdev:
+                        type: string
+                      status:
+                        type: string
+                      total_read_pages:
+                        type: integer
+                      total_write_pages:
+                        type: integer
+                    type: object
+                  migrationPipe:
+                    properties:
+                      destBdevName:
+                        type: string
+                      status:
+                        default: Unknown
+                        enum:
+                        - Unknown
+                        - Connected
+                        - Disconnected
+                        type: string
+                    type: object
+                  startTs:
+                    type: integer
+                type: object
+              sourceVolume:
+                description: SourceVolume is the source volume, which has the original
+                  data
+                properties:
+                  hostNodeId:
+                    type: string
+                  name:
+                    type: string
+                  namespace:
+                    type: string
+                  spdk:
+                    properties:
+                      addrFam:
+                        type: string
+                      address:
+                        type: string
+                      bdevName:
+                        type: string
+                      nsUuid:
+                        type: string
+                      sn:
+                        type: string
+                      subsysNqn:
+                        type: string
+                      svcID:
+                        type: string
+                      transType:
+                        type: string
+                    required:
+                    - addrFam
+                    - address
+                    - bdevName
+                    - nsUuid
+                    - sn
+                    - subsysNqn
+                    - svcID
+                    - transType
+                    type: object
+                  targetNodeId:
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+            required:
+            - sourceVolume
+            type: object
+          status:
+            properties:
+              message:
+                type: string
+              phase:
+                default: Pending
+                enum:
+                - Pending
+                - CreatingVolume
+                - SetupPipe
+                - Syncing
+                - Cleaning
+                - Finished
+                type: string
+              status:
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

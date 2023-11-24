@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: obnvmf-disk-agent-app
+  namespace: obnvmf
+spec:
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 200
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: obnvmf-disk-agent
+  template:
+    metadata:
+      labels:
+        app: obnvmf-disk-agent
+    spec:
+      #priorityClassName: system-node-critical
+      serviceAccount: obnvmf-admin
+      hostNetwork: true
+      containers:
+        - name: node-disk-agent
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["ALL"]
+            allowPrivilegeEscalation: true
+          image: reg.docker.alibaba-inc.com/dbplatform/node-disk-controller:b55bb5bc-20230720164031
+          #imagePullPolicy: Always
+          command:
+            - /node-disk-controller
+          args:
+            - "agent"
+            - "--nodeId=$(NODE_ID)"
+            - "--heartbeatInterval=20s"
+            - "--config=/config/agent-config.yaml"
+          env:
+            - name: NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          resources:
+            limits:
+              cpu: "1"
+              memory: "500Mi"
+            requests:
+              cpu: "100m"
+              memory: "100Mi"
+          volumeMounts:
+            - name: device-dir
+              mountPath: /dev
+            # for File /usr/tmp/spdk.sock
+            - name: spdk-sock-file-dir
+              mountPath: /usr/tmp
+            - name: agent-config
+              mountPath: /config
+            - name: data-dir
+              mountPath: /local-storage
+      volumes:
+        - name: device-dir
+          hostPath:
+            path: /dev
+            type: Directory
+        - name: spdk-sock-file-dir
+          hostPath:
+            path: /usr/tmp/spdk
+            type: DirectoryOrCreate
+        - name: data-dir
+          hostPath:
+            path: /local-storage
+            type: DirectoryOrCreate
+        - name: agent-config
+          configMap:
+            name: storage-setting

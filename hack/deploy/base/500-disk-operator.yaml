@@ -1,0 +1,79 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: node-disk-controller
+  namespace: obnvmf
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ipFamily: IPv4
+  selector:
+    component: node-disk-controller
+  ports:
+    - protocol: TCP
+      port: 9443
+      targetPort: 9443
+
+---
+
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: node-disk-controller
+  namespace: obnvmf
+  labels:
+    component: node-disk-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: node-disk-controller
+  template:
+    metadata:
+      labels:
+        component: node-disk-controller
+        obnvmf/k8s-cluster: test-k8s-cluster
+    spec:
+      serviceAccount: obnvmf-admin
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+      volumes:
+      - name: controller-config
+        configMap:
+          name: storage-setting
+      - name: tls-cert
+        secret:
+          secretName: selfsigned-cert-tls
+      containers:
+      - name: node-disk-controller
+        image: reg.docker.alibaba-inc.com/dbplatform/node-disk-controller:b55bb5bc-20230720164031
+        command:
+        - /node-disk-controller
+        args:
+        - operator
+        - "--config=/controller-config/config.yaml"
+        - "--tlsdir=/tlsdir"
+        - "--enableWebhook=true"
+        env:
+        - name: NODE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: K8S_CLUSTER_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['obnvmf/k8s-cluster']
+        volumeMounts:
+        - name: controller-config
+          mountPath: /controller-config
+        - name: tls-cert
+          mountPath: /tlsdir
+        resources:
+          limits:
+            cpu: "1"
+            memory: "1Gi"
+          requests:
+            cpu: "100m"
+            memory: "100Mi"

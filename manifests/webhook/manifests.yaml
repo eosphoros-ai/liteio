@@ -1,0 +1,52 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-volume-antstor-alipay-com-v1-antstorsnapshot
+  failurePolicy: Fail
+  name: antstorsnapshot-defaulter-webhook
+  rules:
+  - apiGroups:
+    - volume.antstor.alipay.com
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - antstorsnapshots
+  sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-volume-antstor-alipay-com-v1-antstorsnapshot
+  failurePolicy: Fail
+  name: antstorsnapshot-validate-webhook
+  rules:
+  - apiGroups:
+    - volume.antstor.alipay.com
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - antstorsnapshots
+  sideEffects: None

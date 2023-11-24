@@ -1,0 +1,48 @@
+FROM golang:1.17.8 as build
+
+ARG TARGETOS
+ARG TARGETARCH
+ARG TARGETVARIANT=""
+ARG GOPROXY=""
+
+ENV GO111MODULE=on \
+  CGO_ENABLED=1 \
+  GOOS=${TARGETOS} \
+  GOARCH=${TARGETARCH} \
+  GOARM=${TARGETVARIANT} \
+  DEBIAN_FRONTEND=noninteractive \
+  PATH="/root/go/bin:${PATH}" \
+  RELEASE_TAG=${RELEASE_TAG}
+
+WORKDIR /go/src/gitlab.alipay-inc.com/dbplatform/node-disk-controller/
+
+RUN apt-get update && apt-get install -y make
+
+COPY . .
+
+ENV GOPROXY=${GOPROXY}
+
+RUN make controller
+RUN make scheduler
+
+FROM reg.docker.alibaba-inc.com/dbplatform/debian:lvm-20230510
+
+ARG DBUILD_DATE
+ARG DBUILD_REPO_URL
+ARG DBUILD_SITE_URL
+
+LABEL org.label-schema.schema-version="1.0"
+LABEL org.label-schema.name="disk controller/agent and csi driver"
+LABEL org.label-schema.description="disk controller/agent and csi driver"
+LABEL org.label-schema.build-date=$DBUILD_DATE
+LABEL org.label-schema.vcs-url=$DBUILD_REPO_URL
+LABEL org.label-schema.url=$DBUILD_SITE_URL
+
+# support aliflash
+RUN sed -i '/# types =/a \        types = [ "fd", 16, "venice", 16, "aocblk", 16 ]' /etc/lvm/lvm.conf
+
+ENV CODE_DIR="/go/src/gitlab.alipay-inc.com/dbplatform/node-disk-controller"
+
+COPY --from=build ${CODE_DIR}/_build/node-disk-controller /node-disk-controller
+COPY --from=build ${CODE_DIR}/_build/scheduler-plugin /scheduler-plugin
+

@@ -1,0 +1,52 @@
+# use v1beta1 if K8S version < 1.24.6
+apiVersion: storage.k8s.io/v1
+kind: CSIDriver
+metadata:
+  name: antstor.csi.alipay.com
+spec:
+  attachRequired: false
+  podInfoOnMount: true
+  volumeLifecycleModes:
+  - Persistent
+  #- Ephemeral
+
+---
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: antstor-nvmf
+provisioner: antstor.csi.alipay.com
+parameters:
+  fsType: "xfs"
+reclaimPolicy: Delete
+allowVolumeExpansion: false
+volumeBindingMode: WaitForFirstConsumer
+
+---
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: antstor-nvmf-mustlocal
+provisioner: antstor.csi.alipay.com
+parameters:
+  fsType: "xfs"
+  positionAdvice: "MustLocal"
+reclaimPolicy: Delete
+allowVolumeExpansion: false
+volumeBindingMode: WaitForFirstConsumer
+
+---
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: antstor-nvmf-mustremote
+provisioner: antstor.csi.alipay.com
+parameters:
+  fsType: "xfs"
+  positionAdvice: "MustRemote"
+reclaimPolicy: Delete
+allowVolumeExpansion: false
+volumeBindingMode: WaitForFirstConsumer

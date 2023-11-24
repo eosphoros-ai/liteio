@@ -1,0 +1,196 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.9.2
+  creationTimestamp: null
+  name: storagepools.volume.antstor.alipay.com
+spec:
+  group: volume.antstor.alipay.com
+  names:
+    kind: StoragePool
+    listKind: StoragePoolList
+    plural: storagepools
+    singular: storagepool
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.nodeInfo.ip
+      name: ip
+      type: string
+    - jsonPath: .spec.nodeInfo.hostname
+      name: hostname
+      type: string
+    - jsonPath: .status.capacity.storage
+      name: storage
+      type: string
+    - jsonPath: .status.vgFreeSize
+      name: free
+      type: string
+    - jsonPath: .status.status
+      name: status
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: age
+      type: date
+    name: v1
+    schema:
+      openAPIV3Schema:
+        description: StoragePool is the Schema for the storagepools API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: StoragePoolSpec defines the desired state of StoragePool
+            properties:
+              addresses:
+                description: Addresses at which this pool can be accessed
+                items:
+                  description: NodeAddress contains information for the node's address.
+                  properties:
+                    address:
+                      description: The node address.
+                      type: string
+                    type:
+                      description: Node address type, one of Hostname, ExternalIP
+                        or InternalIP.
+                      type: string
+                  required:
+                  - address
+                  - type
+                  type: object
+                type: array
+              kernelLvm:
+                description: KernelLVM contains info of VG
+                properties:
+                  bytes:
+                    format: int64
+                    type: integer
+                  extendCount:
+                    type: integer
+                  extendSize:
+                    format: int64
+                    type: integer
+                  name:
+                    type: string
+                  pvCount:
+                    type: integer
+                  reservedLVol:
+                    items:
+                      properties:
+                        devPath:
+                          type: string
+                        lvLayout:
+                          description: striped or linear or thin,pool
+                          type: string
+                        name:
+                          type: string
+                        sizeByte:
+                          format: int64
+                          type: integer
+                        vgName:
+                          type: string
+                      required:
+                      - devPath
+                      - lvLayout
+                      - name
+                      - sizeByte
+                      - vgName
+                      type: object
+                    type: array
+                  vgUUID:
+                    type: string
+                type: object
+              nodeInfo:
+                description: NodeInfo contains info of node
+                properties:
+                  hostname:
+                    type: string
+                  id:
+                    type: string
+                  ip:
+                    type: string
+                  labels:
+                    additionalProperties:
+                      type: string
+                    type: object
+                type: object
+              spdkLVStore:
+                description: SpdkLVStore contains info of lvstore in spdk
+                properties:
+                  baseBdev:
+                    type: string
+                  blockSize:
+                    type: integer
+                  bytes:
+                    format: int64
+                    type: integer
+                  clusterSize:
+                    type: integer
+                  name:
+                    type: string
+                  totalDataClusters:
+                    type: integer
+                  uuid:
+                    type: string
+                type: object
+            type: object
+          status:
+            description: StoragePoolStatus defines the observed state of StoragePool
+            properties:
+              capacity:
+                additionalProperties:
+                  anyOf:
+                  - type: integer
+                  - type: string
+                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                  x-kubernetes-int-or-string: true
+                description: ResourceList is a set of (resource name, quantity) pairs.
+                type: object
+              conditions:
+                description: 子系统的状态，例如 SpkdTarget 状态(json rpc是否正常)， LVM VG 状态(接口调用是否正常)
+                items:
+                  properties:
+                    message:
+                      type: string
+                    status:
+                      type: string
+                    type:
+                      type: string
+                  type: object
+                type: array
+              message:
+                type: string
+              status:
+                default: ready
+                description: Status of Pool
+                enum:
+                - locked
+                - ready
+                - offline
+                - unknown
+                type: string
+              vgFreeSize:
+                anyOf:
+                - type: integer
+                - type: string
+                description: free space of VG
+                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                x-kubernetes-int-or-string: true
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

@@ -1,0 +1,154 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: obnvmf-csi-node
+  namespace: obnvmf
+spec:
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: obnvmf-csi-antstor
+      role: node
+  template:
+    metadata:
+      labels:
+        app: obnvmf-csi-antstor
+        role: node
+    spec:
+      #priorityClassName: system-node-critical
+      serviceAccount: obnvmf-admin
+      hostNetwork: true
+      containers:
+        - name: csi-antstor-plugin
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["CAP_MKNOD", "CAP_SYS_ADMIN", "SYS_ADMIN", "SYS_RAWIO"]
+            allowPrivilegeEscalation: true
+          image: reg.docker.alibaba-inc.com/dbplatform/node-disk-controller:b55bb5bc-20230720164031
+          command:
+          - /antstor
+          args:
+            - "server"
+            - "--driver=antstor.csi.alipay.com"
+            - "--nodeID=$(NODE_ID)"
+            - "--endpoint=$(CSI_ENDPOINT)"
+            - "--maxVolume=20"
+            - "--logtostderr"
+          resources:
+            limits:
+              cpu: "1"
+              memory: "300Mi"
+            requests:
+              cpu: "100m"
+              memory: "100Mi"
+          env:
+            - name: NODE_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: CSI_ENDPOINT
+              value: unix:///plugin/csi.sock
+          volumeMounts:
+            - name: nvme-cli-dir
+              mountPath: /home/admin/nvmeof/bin
+            - name: plugin-dir
+              mountPath: /plugin
+            - name: device-dir
+              mountPath: /dev
+            - name: global-mount-dir
+              mountPath: /var/lib/kubelet/plugins/
+              mountPropagation: "Bidirectional"
+            # - name: sigma-pods-mount-dir
+            #   mountPath: /var/lib/kubelet/pods/
+            #   mountPropagation: "Bidirectional"
+            - name: pods-mount-dir
+              mountPath: /var/lib/kubelet/
+              # needed so that any mounts setup inside this container are
+              # propagated back to the host machine.
+              mountPropagation: "Bidirectional"
+            - name: ko-dir
+              mountPath: /lib/modules
+        - name: csi-node-driver-registrar
+          image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v1.2.0
+          args:
+            - "--v=5"
+            - "--csi-address=$(ADDRESS)"
+            - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
+          resources:
+            limits:
+              cpu: "1"
+              memory: "500Mi"
+            requests:
+              cpu: "100m"
+              memory: "100Mi"
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "rm -rf /registration/antstor.csi.alipay.com/plugin/csi.sock"]
+          env:
+            - name: ADDRESS
+              value: /plugin/csi.sock
+            - name: DRIVER_REG_SOCK_PATH
+              value: /var/lib/kubelet/plugins/antstor.csi.alipay.com/csi.sock
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: NODE_DRIVER
+              value: antstor.csi.alipay.com
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /plugin
+            - name: registration-dir
+              mountPath: /registration
+        - name: liveness-probe
+          image: quay.io/k8scsi/livenessprobe:v2.0.0
+          args:
+          - "--csi-address=/plugin/csi.sock"
+          resources:
+            limits:
+              cpu: "0.2"
+              memory: "200Mi"
+            requests:
+              cpu: "0"
+              memory: "0"
+          volumeMounts:
+          - mountPath: /plugin
+            name: plugin-dir
+      volumes:
+        - name: device-dir
+          hostPath:
+            path: /dev
+            type: Directory
+        - name: registration-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins_registry/
+            type: DirectoryOrCreate
+        - name: plugin-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins/antstor.csi.alipay.com/
+            type: DirectoryOrCreate
+        - name: pods-mount-dir
+          hostPath:
+            path: /var/lib/kubelet/
+            type: Directory
+        - name: global-mount-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins/
+            type: Directory
+        # - name: sigma-pods-mount-dir
+        #   hostPath:
+        #     path: /var/lib/kubelet/pods/
+        #     type: Directory
+        - name: socket-dir
+          emptyDir: {}
+        - name: nvme-cli-dir
+          hostPath:
+            path: /home/admin/nvmeof/bin
+            type: DirectoryOrCreate
+        - name: ko-dir
+          hostPath:
+            path: /lib/modules
+            type: Directory

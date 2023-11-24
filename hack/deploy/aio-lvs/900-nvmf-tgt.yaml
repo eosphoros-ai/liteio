@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nvmf-tgt
+  namespace: obnvmf
+spec:
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: nvmf-tgt
+      role: node
+  template:
+    metadata:
+      labels:
+        app: nvmf-tgt
+        role: node
+    spec:
+      #priorityClassName: system-node-critical
+      serviceAccount: obnvmf-admin
+      hostNetwork: true
+      containers:
+        - name: nvmf-tgt
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["ALL"]
+            allowPrivilegeEscalation: true
+          image: reg.docker.alibaba-inc.com/shenmu/nvmftgt:20230628-numa
+          command:
+          - /nvmf_tgt
+          args:
+            - "-m"
+            - "[1]"
+            - "-s" #memory size in MB for DPDK
+            - "256"
+            - "--num-trace-entries"
+            - "0"
+          resources:
+            requests:
+              cpu: "1"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+              hugepages-2Mi: "512Mi"
+          volumeMounts:
+            - name: log-dir
+              mountPath: /tmp/log
+            - name: hugepage
+              mountPath: /hugepages
+            - name: sock-dir
+              mountPath: /usr/tmp
+            - name: data-dir
+              mountPath: /local-storage
+      volumes:
+        - name: log-dir
+          hostPath:
+            path: /tmp/log
+            type: DirectoryOrCreate
+        - name: sock-dir
+          hostPath:
+            path: /usr/tmp/spdk
+            type: DirectoryOrCreate
+        - name: hugepage
+          emptyDir:
+            medium: HugePages
+        - name: data-dir
+          hostPath:
+            path: /local-storage
+            type: DirectoryOrCreate

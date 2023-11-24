@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: storage-setting
+  namespace: obnvmf
+data:
+  config.yaml: |
+    scheduler:
+      maxRemoteVolumeCount: 3
+      filters:
+      - Basic
+      - Affinity
+      - ObReplica
+      - LocalWatermark
+      priorities:
+      - LeastResource
+      - PositionAdvice
+    pluginConfigs:
+      defaultLocalSpaceRules:
+        - enableDefault: true
+          defaultLocalStoragePct: 100
+          labelSelector:
+            matchLabels:
+              biz-name: cloudprovision
+      autoAdjustLocal:
+        enable: true
+        maxCountInProcess: 1
+        labelSelector:
+          matchLabels:
+            biz-name: cloudprovision
+  agent-config.yaml: |
+    storage:
+      pooling:
+        name: test-vg
+        mode: KernelLVM
+      pvs:
+      - filePath: /local-storage/pv01
+        size: 1048576000 # 1GiB

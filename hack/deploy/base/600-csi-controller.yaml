@@ -1,0 +1,130 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: csi-antstor-controller
+  namespace: obnvmf
+  labels:
+    component: csi-antstor-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: csi-antstor-controller
+  template:
+    metadata:
+      labels:
+        component: csi-antstor-controller
+    spec:
+      serviceAccount: obnvmf-admin
+      containers:
+      - name: csi-antstor
+        image: reg.docker.alibaba-inc.com/dbplatform/node-disk-controller:b55bb5bc-20230720164031
+        command:
+        - /antstor
+        args:
+        - "server"
+        - "--driver=antstor.csi.alipay.com"
+        - "--endpoint=$(CSI_ENDPOINT)"
+        - "--maxVolume=20"
+        - "--nodeID=$(NODE_ID)"
+        - "--logtostderr"
+        - "--initKernelMod=false"
+        - "--isController=true"
+        env:
+        - name: NODE_ID
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: CSI_ENDPOINT
+          value: unix://csi/csi.sock
+        resources:
+          limits:
+            cpu: "1"
+            memory: "1Gi"
+          requests:
+            cpu: "100m"
+            memory: "100Mi"
+        volumeMounts:
+        - name: socket-dir
+          mountPath: /csi
+      - name: csi-provisioner
+        image: "registry.k8s.io/sig-storage/csi-provisioner:v2.1.1"
+        args:
+            #- "--provisioner=antstor.csi.alipay.com"
+            - "--csi-address=$(ADDRESS)"
+            - "--extra-create-metadata=true"
+            - "--v=5"
+            - "--feature-gates=Topology=true"
+        env:
+        - name: ADDRESS
+          value: /csi/csi.sock
+        resources:
+          limits:
+            cpu: "1"
+            memory: "1Gi"
+          requests:
+            cpu: "100m"
+            memory: "100Mi"
+        imagePullPolicy: "IfNotPresent"
+        volumeMounts:
+        - name: socket-dir
+          mountPath: /csi
+      - name: csi-attacher
+        image: quay.io/k8scsi/csi-attacher:v2.0.0
+        args:
+        - "--csi-address=$(ADDRESS)"
+        - "--v=5"
+        env:
+        - name: ADDRESS
+          value: /csi/csi.sock
+        - name: MY_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        resources:
+          limits:
+            cpu: "1"
+            memory: "500Mi"
+          requests:
+            cpu: "0"
+            memory: "0Mi"
+        imagePullPolicy: "IfNotPresent"
+        volumeMounts:
+        - name: socket-dir
+          mountPath: /csi
+      # - name: csi-resizer
+      #   image: reg.docker.alibaba-inc.com/kubecsi/csi-resizer:v1.3.0
+      #   args:
+      #     - "--v=5"
+      #     - "--csi-address=$(CSI_ENDPOINT)"
+      #     #- "--leader-election"
+      #   env:
+      #     - name: CSI_ENDPOINT
+      #       value: /socketDir/csi.sock
+      #   volumeMounts:
+      #     - name: socket-dir
+      #       mountPath: /socketDir/
+      #   resources:
+      #     limits:
+      #       cpu: "2"
+      #       memory: "4Gi"
+      #     requests:
+      #       cpu: "1"
+      #       memory: "2Gi"
+      - name: liveness-probe
+        image: quay.io/k8scsi/livenessprobe:v2.0.0
+        args:
+        - "--csi-address=/csi/csi.sock"
+        resources:
+          limits:
+            cpu: "1"
+            memory: "1Gi"
+          requests:
+            cpu: "0"
+            memory: "0Gi"
+        volumeMounts:
+        - mountPath: /csi
+          name: socket-dir
+      volumes:
+      - name: socket-dir
+        emptyDir: {}

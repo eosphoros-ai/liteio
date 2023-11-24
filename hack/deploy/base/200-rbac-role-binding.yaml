@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: obnvmf-admin
+  namespace: obnvmf
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: obnvmf-rolebinding
+  namespace: obnvmf
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: obnvmf-role
+subjects:
+  - kind: User
+    name: obnvmf-admin
+  - kind: ServiceAccount
+    name: obnvmf-admin
+    namespace: obnvmf
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: obnvmf-csi-plugin
+subjects:
+  - kind: User
+    name: obnvmf-admin
+  - kind: ServiceAccount
+    name: obnvmf-admin
+    namespace: obnvmf
+roleRef:
+  kind: ClusterRole
+  name: obnvmf-csi-plugin
+  apiGroup: rbac.authorization.k8s.io

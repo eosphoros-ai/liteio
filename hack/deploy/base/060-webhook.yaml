@@ -1,0 +1,26 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: "antstor-volume-validate-webhook"
+webhooks:
+- admissionReviewVersions:
+  - v1
+  #name: "node-disk-controller.obnvmf.svc"
+  namespaceSelector:
+    matchLabels:
+      admission-webhook: enabled
+  rules:
+    - apiGroups: ["volume.antstor.alipay.com"]
+      apiVersions: ["v1"]
+      operations: ["CREATE"]
+      resources: ["antstorvolumes"]
+      scope: "Namespaced"
+  failurePolicy: Fail
+  sideEffects: None
+  clientConfig:
+    service:
+      namespace: obnvmf
+      name: node-disk-controller
+      path: /validate-volume-antstor-alipay-com-v1-antstorvolume
+      port: 9443
+    caBundle: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURNRENDQWhpZ0F3SUJBZ0lRSE1KYzZXWDRUWGIzaHRDeGRjWlhLVEFOQmdrcWhraUc5dzBCQVFzRkFEQWIKTVJrd0Z3WURWUVFERXhCdGVTMXpaV3htYzJsbmJtVmtMV05oTUNBWERUSXpNRGN5TnpBeU1qQTBOVm9ZRHpJeApNekV3TnpBeE1ESXlNRFExV2pBYk1Sa3dGd1lEVlFRREV4QnRlUzF6Wld4bWMybG5ibVZrTFdOaE1JSUJJakFOCkJna3Foa2lHOXcwQkFRRUZBQU9DQVE4QU1JSUJDZ0tDQVFFQXBoY3ZJcHRGeGpWaTJVdkRhUVJWNktIeldvc0UKejhodUFxSENEamRzUE16bUl0cFk4ZytEZ1d0Qk5OTHduRDc2dnpXekJJWThUbXFRWFBVcjhHNmVOWGNpU2IzTwo1WEVYeVpzWG02emFMREtrVVB3QkErZld4ZE1yTGt6YmpqQ2Fsa29ONUNEYzhmT1ZzMUdYR3JaSk5QcXpUWFhwCitkZ2pzUHlGSmhnQlU5andxdUNHR3JkVXhwSzl2dFlaYkdlRzQ2MWdHTzV3MFNUODgxS1hWWHlqS204SS9KR28KS1JQK2dtSTVremx2K1NwSThYd29NWDRETHpDR2haRXNhcUN4WVlxQmdQSXZLVlF0KytOYjMzN3ZoWW5VN2pyMgpMWllLM290dDNKTjZxaThjeTN3ZnVvVkNzYnZJN0I5UExBbHNTVnorellqd00zdFh0N3RCdTJiZnhRSURBUUFCCm8yNHdiREFPQmdOVkhROEJBZjhFQkFNQ0FxUXdEd1lEVlIwVEFRSC9CQVV3QXdFQi96QWRCZ05WSFE0RUZnUVUKWXlkYUtqZkIrS2tyRjM0R25kWTdzM3F1c3drd0tnWURWUjBSQkNNd0lZSWZibTlrWlMxa2FYTnJMV052Ym5SeQpiMnhzWlhJdWIySnVkbTFtTG5OMll6QU5CZ2txaGtpRzl3MEJBUXNGQUFPQ0FRRUFXWW5zbk9sUWRTc1M4RDlqCmJtWU1sbndNUjVoUnR2elcydWJ1cDVURDZiQmExNHcrS2NJK3lGNDg0VklQY3FpNytsNjBXWFQrMmJZTVdNRFoKM09FcEhUR3pzQlQyNzhlSGFJQzdEdjd1ak9VRGtEbnNUVUJPSTZuNmk3eG1tdnFTNXM3Zjd6dHVCbFQ2NGtUZQo2UXY2TzZyMENYRzM5U2ZKdlN5VStTWHVyL1dDUWMrMTgra3daSGZPaFpsM1dDSHJOZ05pdmluR2dzaittZ2psCit6S2J6aEVJcnR3NnNUUi8xeGJjRk1kNW9hM1JNL0VubCtXZ3FYZ1ptc0tXdmwwRUVnTHdRQUIraG1wSUxMdTAKNXU4VHZ1cUdBSVJucTdUUU55M1NpM29Qd1FFTE8yaE5IaUh3dFY2b0JtY01vMVZVZWQ2MlFxUlNNN3Fpckl1SQpveHVPOVE9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
