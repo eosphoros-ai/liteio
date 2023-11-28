@@ -1,6 +1,6 @@
 # Quick Start 
 
-The Quick Start Guide helps you to seup a local K8S cluster and deploy NexusProject in it. It is only for testing purpose.
+The Quick Start Guide helps you to seup a local K8S cluster and deploy LiteIO in it. It is only for testing purpose.
 
 ## Preparing Node
 
@@ -107,7 +107,7 @@ cluster config need mapping `/dev` into kind's container, so that losetup is abl
 Doc: [Setup K8S cluster by kubeadm](kubeadm-install.md)
 
 
-## Install NexusProject
+## Install LiteIO
 
 
 ### Data Engine: LVM
