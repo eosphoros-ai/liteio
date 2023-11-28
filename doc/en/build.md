@@ -12,11 +12,8 @@
 ### AMD64
 
 ```
-# build disk-controller and disk-agent
+# build disk-controller, disk-agent and csi controller/driver
 make controller
-
-# build CSI Driver
-make csi
 
 # build scheduler plugin
 make scheduler
