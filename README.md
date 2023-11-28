@@ -30,7 +30,7 @@ Overall, LiteIO's architecture provides a scalable and efficient approach to clo
 
 ## Quick Start
 
-The Quick Start Guide helps you to seup a local K8S cluster and deploy LiteIO in it.
+The Quick Start Guide helps you to setup a local K8S cluster and deploy LiteIO in it.
 
 - [Quick Start](doc/en/quick-start.md)
 - [Setup K8S by kubeadm](doc/en/kubeadm-install.md)
