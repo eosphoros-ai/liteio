@@ -9,7 +9,9 @@
 3. **Easy Setup**: With only a few dependencies, such as Hugepages, LiteIO can be quickly set up with a single command line.
 4. **Hyper-converged Architecture**: LiteIO follows a hyper-converged architecture, where a single node can function as both a frontend and backend simultaneously. There is no minimum number of nodes required to initialize a new cluster.
 
----
+## Motivation
+
+Many distributed data-intensive applications, like databases, often opt for local NVMe disks for high performance and cost-effectiveness compared to distributed disk services like EBS. However, this preference can lead to an imbalance in resource utilization. For instance, a node may experience CPU or memory shortages while still having ample storage resources available. To address this issue, our aim is to develop a system that can effectively leverage these fragmented storage resources while maintaining high performance, which is close to local disks.
 
 ## Architecture
 
