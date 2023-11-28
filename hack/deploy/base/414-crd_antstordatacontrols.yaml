@@ -1,0 +1,193 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.12.1
+  name: antstordatacontrols.volume.antstor.alipay.com
+spec:
+  group: volume.antstor.alipay.com
+  names:
+    kind: AntstorDataControl
+    listKind: AntstorDataControlList
+    plural: antstordatacontrols
+    singular: antstordatacontrol
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.engineType
+      name: type
+      type: string
+    - jsonPath: .spec.raid.level
+      name: raid
+      type: string
+    - jsonPath: .spec.hostNode.ip
+      name: host
+      type: string
+    - jsonPath: .status.status
+      name: status
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: age
+      type: date
+    name: v1
+    schema:
+      openAPIV3Schema:
+        description: AntstorDataControl is the Schema for the AntstorDataControl API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: AntstorVolumeGroupSpec defines the desired state of AntstorVolumeGroup
+            properties:
+              engineType:
+                description: type of data control
+                type: string
+              hostNode:
+                properties:
+                  hostname:
+                    type: string
+                  id:
+                    type: string
+                  ip:
+                    type: string
+                  labels:
+                    additionalProperties:
+                      type: string
+                    type: object
+                type: object
+              lvm:
+                description: LVMControl uses LVM as IO controller
+                properties:
+                  lvol:
+                    type: string
+                  pvs:
+                    items:
+                      properties:
+                        devPath:
+                          type: string
+                        target:
+                          properties:
+                            addrFam:
+                              type: string
+                            address:
+                              type: string
+                            bdevName:
+                              type: string
+                            nsUuid:
+                              type: string
+                            sn:
+                              type: string
+                            subsysNqn:
+                              type: string
+                            svcID:
+                              type: string
+                            transType:
+                              type: string
+                          required:
+                          - addrFam
+                          - address
+                          - bdevName
+                          - nsUuid
+                          - sn
+                          - subsysNqn
+                          - svcID
+                          - transType
+                          type: object
+                        volId:
+                          properties:
+                            name:
+                              type: string
+                            namespace:
+                              type: string
+                            uuid:
+                              type: string
+                          required:
+                          - name
+                          - namespace
+                          - uuid
+                          type: object
+                      type: object
+                    type: array
+                  vg:
+                    type: string
+                type: object
+              raid:
+                description: raid level
+                properties:
+                  level:
+                    type: string
+                required:
+                - level
+                type: object
+              targetNodeId:
+                type: string
+              totalSize:
+                format: int64
+                type: integer
+              uuid:
+                type: string
+              volumeGroups:
+                items:
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    uuid:
+                      type: string
+                  required:
+                  - name
+                  - namespace
+                  - uuid
+                  type: object
+                type: array
+            required:
+            - engineType
+            - raid
+            - totalSize
+            - uuid
+            type: object
+          status:
+            description: AntstorDataControlStatus defines the observed state of AntstorDataControl
+            properties:
+              csiNodePubParams:
+                properties:
+                  stagingTargetPath:
+                    type: string
+                  targetPath:
+                    type: string
+                  volumeContext:
+                    additionalProperties:
+                      type: string
+                    description: volume_context in NodePublishVolume request
+                    type: object
+                required:
+                - stagingTargetPath
+                - targetPath
+                type: object
+              message:
+                type: string
+              status:
+                default: creating
+                enum:
+                - creating
+                - ready
+                - deleted
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

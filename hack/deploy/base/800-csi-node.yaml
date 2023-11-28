@@ -26,7 +26,7 @@ spec:
             capabilities:
               add: ["CAP_MKNOD", "CAP_SYS_ADMIN", "SYS_ADMIN", "SYS_RAWIO"]
             allowPrivilegeEscalation: true
-          image: reg.docker.alibaba-inc.com/dbplatform/node-disk-controller:b55bb5bc-20230720164031
+          image: silentred/node-disk-controller:e2ed4c68-20231115165836
           command:
           - /antstor
           args:

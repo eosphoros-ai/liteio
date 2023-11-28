@@ -11,23 +11,32 @@ data:
       - Basic
       - Affinity
       - ObReplica
-      - LocalWatermark
+      - MinLocalStorage
       priorities:
       - LeastResource
       - PositionAdvice
+      remoteIgnoreAnnoSelector:
+        obnvmf/regard-as-remote: "false"
+      lockSchedConfig:
+        nodeSelector:
+        - key: sigma.ali/lock-node
+          operator: Exists
+        nodeTaints:
+        - key: node.sigma.ali/lifecycle
+          operator: Exists
     pluginConfigs:
       defaultLocalSpaceRules:
         - enableDefault: true
           defaultLocalStoragePct: 100
           labelSelector:
             matchLabels:
-              biz-name: cloudprovision
+              machine.sigma.alipay.com/biz-name: cloudprovision
       autoAdjustLocal:
         enable: true
         maxCountInProcess: 1
         labelSelector:
           matchLabels:
-            biz-name: cloudprovision
+            machine.sigma.alipay.com/biz-name: cloudprovision
   agent-config.yaml: |
     storage:
       pooling:

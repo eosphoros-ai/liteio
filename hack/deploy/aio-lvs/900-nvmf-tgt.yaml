@@ -26,7 +26,7 @@ spec:
             capabilities:
               add: ["ALL"]
             allowPrivilegeEscalation: true
-          image: reg.docker.alibaba-inc.com/shenmu/nvmftgt:20230628-numa
+          image: silentred/nvmftgt:20230628-numa
           command:
           - /nvmf_tgt
           args:
