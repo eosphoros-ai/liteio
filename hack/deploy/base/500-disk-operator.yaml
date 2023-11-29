@@ -48,7 +48,7 @@ spec:
           secretName: selfsigned-cert-tls
       containers:
       - name: node-disk-controller
-        image: silentred/node-disk-controller:7184e038-20231129171234
+        image: silentred/node-disk-controller:ba03b9e2-20231129185104
         command:
         - /node-disk-controller
         args:
