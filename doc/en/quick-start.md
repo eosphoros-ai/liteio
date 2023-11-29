@@ -151,6 +151,7 @@ The above config will create file /data/pv01 is it does not exist, create a loop
 #### Deploy Pod and PVC
 
 ```
+# pod.yaml is under hack/deploy/example directory
 kubectl create -f pod.yaml
 pod/test-pod created
 persistentvolumeclaim/pvc-obnvmf-test created
@@ -205,6 +206,13 @@ No resources found
 
 ### Data Engine: SPDK LVS
 
+The csi-node depends on `nvme` command-line tool to connect remote targets. Run following commands to install nvme client.
+```
+sudo yum install -y nvme-cli
+
+# csi-node uses file /home/admin/nvmeof/bin/nvme
+sudo cp /usr/sbin/nvme /home/admin/nvmeof/bin/
+```
 
 ```
 # create components

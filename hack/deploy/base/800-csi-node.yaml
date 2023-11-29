@@ -52,6 +52,8 @@ spec:
             - name: CSI_ENDPOINT
               value: unix:///plugin/csi.sock
           volumeMounts:
+            - name: nvme-config
+              mountPath: /etc/nvme
             - name: nvme-cli-dir
               mountPath: /home/admin/nvmeof/bin
             - name: plugin-dir
@@ -153,3 +155,7 @@ spec:
           hostPath:
             path: /lib/modules
             type: Directory
+        - name: nvme-config
+          hostPath:
+            path: /etc/nvme
+            type: DirectoryOrCreate
