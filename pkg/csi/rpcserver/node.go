@@ -175,11 +175,12 @@ func (ns *NodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 		return &csi.NodeStageVolumeResponse{}, nil
 	}
 
-	// runc 的逻辑
-	// 1. 如果是本地磁盘，跳过 nvme client connect的步骤，直接使用 DevPath 去 format and Mount
-	// 2. 如果是远程磁盘，则先 nvme client connect;
+	// for runc:
+	// 1. For local volume, skip doing `nvme connect`, use DevPath for formating and mounting.
+	// 2. For remote volume, do `nvme connect`, get the connected DevPath.
+	// 3. if the volume is local and type is SpdkLVol, do the same as remote volume.
 	devicePath = pv.GetDevPath()
-	if !isLocalDisk {
+	if !isLocalDisk || (!isLVM && pv.GetSpdkTarget() != nil) {
 		devicePath, err = connectSpdkTarget(pv.GetSpdkTarget())
 		if err != nil {
 			klog.Error(err)
