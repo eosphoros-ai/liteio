@@ -639,7 +639,7 @@ func GetSocketPathFromeUUID(uuid string) (path string) {
 
 func (vs *VolumeSyncer) applyVolume(volume *v1.AntstorVolume) (needReturn bool, err error) {
 	// apply allocated size of LV to Annotation
-	if _, has := volume.Annotations[v1.AllocatedSizeAnnoKey]; !has {
+	if _, has := volume.Annotations[v1.AllocatedSizeAnnoKey]; !has && volume.Status.Status == v1.VolumeStatusReady {
 		// get allocated size
 		var (
 			lvName   = volume.Name
@@ -647,7 +647,8 @@ func (vs *VolumeSyncer) applyVolume(volume *v1.AntstorVolume) (needReturn bool, 
 			sizeByte uint64
 		)
 		vol, err = vs.poolService.PoolEngine().GetVolume(lvName)
-		if err != nil {
+		// ignore NotFoundDeviceError, because this error blocks the volume creation process
+		if err != nil && !spdk.IsNotFoundDeviceError(err) {
 			return
 		}
 
