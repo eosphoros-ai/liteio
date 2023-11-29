@@ -45,7 +45,8 @@ Set grub2 to use the new kernel
 
 ```
 # Set default kernel
-sudo grub2-set-default "CentOS Linux (5.4.249-1.el7.elrepo.x86_64) 7 (Core)"
+# run awk -F\' /^menuentry/{print\$2} /etc/grub2.cfg to list available kernel names
+sudo grub2-set-default "CentOS Linux (5.4.261-1.el7.elrepo.x86_64) 7 (Core)"
 
 # Rebuild Grub.cfg file
 sudo grub2-mkconfig -o /boot/grub2/grub.cfg
@@ -117,7 +118,7 @@ Doc: [Setup K8S cluster by kubeadm](kubeadm-install.md)
 kubectl create -f hack/deploy/base/
 
 # create configmap
-kubectl create -f hack/deploy/base/lvm
+kubectl create -f hack/deploy/lvm
 
 # list pods
 kubectl -n obnvmf get pods

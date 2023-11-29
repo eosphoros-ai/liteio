@@ -34,6 +34,7 @@ sudo systemctl restart containerd
 
 ## Setup K8S
 ```
+# replace "172.26.10.67" with the IP address of your machine
 sudo kubeadm init --ignore-preflight-errors Swap --apiserver-advertise-address=172.26.10.67 --pod-network-cidr=10.244.0.0/16
 # follow instructions to copy kubeconfig file to $HOME/.kube/config
 
@@ -46,11 +47,13 @@ https://github.com/coreos/flannel/raw/master/Documentation/kube-flannel.yml
 
 ## Setup Hugepage
 ```
+# set hugepage
 sudo bash -c "echo 256 > /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages"
-restart kubelet
 
+# restart kubelet
 sudo systemctl restart kubelet
 
+# check if kubelet has recognized huagepage
 kubectl get nodes -oyaml | grep hugepages-2Mi
 ```
 

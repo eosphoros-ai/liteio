@@ -2,10 +2,10 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   name: "antstor-volume-validate-webhook"
-webhooks:
+webhooks: 
 - admissionReviewVersions:
   - v1
-  #name: "node-disk-controller.obnvmf.svc"
+  name: node-disk-controller.obnvmf.svc
   namespaceSelector:
     matchLabels:
       admission-webhook: enabled

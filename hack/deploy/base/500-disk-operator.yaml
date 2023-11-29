@@ -6,7 +6,7 @@ metadata:
 spec:
   type: ClusterIP
   clusterIP: None
-  ipFamily: IPv4
+  #ipFamily: IPv4 # k8s 1.18 may need this field
   selector:
     component: node-disk-controller
   ports:

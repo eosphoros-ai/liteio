@@ -57,6 +57,8 @@ spec:
               mountPath: /config
             - name: data-dir
               mountPath: /local-storage
+            - name: nvme-config
+              mountPath: /etc/nvme
       volumes:
         - name: device-dir
           hostPath:
@@ -73,3 +75,7 @@ spec:
         - name: agent-config
           configMap:
             name: storage-setting
+        - name: nvme-config
+          hostPath:
+            path: /etc/nvme
+            type: DirectoryOrCreate

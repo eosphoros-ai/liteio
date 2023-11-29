@@ -20,8 +20,9 @@ spec:
       - name: csi-antstor
         image: silentred/node-disk-controller:e2ed4c68-20231115165836
         command:
-        - /antstor
+        - /node-disk-controller
         args:
+        - antstor
         - "server"
         - "--driver=antstor.csi.alipay.com"
         - "--endpoint=$(CSI_ENDPOINT)"
