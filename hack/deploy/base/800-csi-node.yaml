@@ -26,7 +26,7 @@ spec:
             capabilities:
               add: ["CAP_MKNOD", "CAP_SYS_ADMIN", "SYS_ADMIN", "SYS_RAWIO"]
             allowPrivilegeEscalation: true
-          image: silentred/node-disk-controller:e2ed4c68-20231115165836
+          image: silentred/node-disk-controller:7184e038-20231129171234
           command:
           - /node-disk-controller
           args:
