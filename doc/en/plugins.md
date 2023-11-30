@@ -4,6 +4,27 @@ The Disk-Controller is primarily built using the controller-runtime library. In 
 
 Since users may be running LiteIO in different environments, they may have specific requirements for reconciling StoragePools and Volumes. To address this issue, LiteIO offers a plugin mechanism that includes reconciler and scheduler plugins.
 
+## Import liteio to your project
+
+`go.mod` example:
+
+```
+module your-project
+
+go 1.17
+
+require (
+    code.alipay.com/dbplatform/node-disk-controller v1.0.0
+)
+
+
+replace code.alipay.com/dbplatform/node-disk-controller => github.com/eosphoros-ai/liteio v1.0.0
+```
+
+The above config will download mod from URL `github.com/eosphoros-ai/liteio@v1.0.0` and use it as mod `code.alipay.com/dbplatform/node-disk-controller`
+Replace mod version `v1.0.0` with a real version name.
+
+
 ## Reconciler Plugin
 
 The Plugin includes three methods:
