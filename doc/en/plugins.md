@@ -21,8 +21,8 @@ require (
 replace code.alipay.com/dbplatform/node-disk-controller => github.com/eosphoros-ai/liteio v1.0.0
 ```
 
-The above config will download mod from URL `github.com/eosphoros-ai/liteio@v1.0.0` and use it as mod `code.alipay.com/dbplatform/node-disk-controller`
-Replace mod version `v1.0.0` with a real version name.
+The above config will download mod from URL `github.com/eosphoros-ai/liteio@v1.0.0` and use it as mod `code.alipay.com/dbplatform/node-disk-controller`.
+Remember to replace mod version `v1.0.0` with a real version name.
 
 
 ## Reconciler Plugin
