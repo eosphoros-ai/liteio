@@ -25,7 +25,7 @@ ENV GOPROXY=${GOPROXY}
 RUN make controller
 RUN make scheduler
 
-FROM reg.docker.alibaba-inc.com/dbplatform/debian:lvm-20230510
+FROM reg.docker.alibaba-inc.com/dbplatform/debian:lvm-20231205
 
 ARG DBUILD_DATE
 ARG DBUILD_REPO_URL
