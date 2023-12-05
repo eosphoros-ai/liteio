@@ -4,12 +4,12 @@ import (
 	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/scheduler/filter"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/state"
+	"code.alipay.com/dbplatform/node-disk-controller/pkg/util"
 	"k8s.io/klog/v2"
 )
 
 const (
 	minLocalStoragePct float64 = 20
-	fourMiB            int64   = 1 << 22
 	//
 	ReasonLocalStorageTooLow = "LocalStorageTooLow"
 )
@@ -53,6 +53,6 @@ func GetAllocatableRemoveVolumeSize(node *state.Node, volSize int64) (result int
 		}
 	}
 
-	result = result / fourMiB * fourMiB
+	result = result / util.FourMiB * util.FourMiB
 	return
 }
