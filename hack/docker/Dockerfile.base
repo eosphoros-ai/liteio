@@ -1,0 +1,15 @@
+FROM debian:bullseye-slim
+LABEL maintainers="silentred"
+LABEL description="debian bullseye-slim with lvm2, xfs, ext4, pcie, kmod, mount utils"
+
+RUN apt-get update && \
+    # for CSI node
+    apt-get install -y util-linux e2fsprogs xfsprogs mount ca-certificates udev kmod nvme-cli && \
+    # for disk-agent
+    apt-get install -y lvm2 pciutils && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN sed -i 's/use_lvmetad = 1/use_lvmetad = 0/' /etc/lvm/lvm.conf && \
+    sed -i 's/use_lvmpolld = 1/use_lvmpolld = 0/' /etc/lvm/lvm.conf && \
+    sed -i 's/udev_sync = 1/udev_sync = 0/' /etc/lvm/lvm.conf && \
+    sed -i 's/udev_rules = 1/udev_rules = 0/' /etc/lvm/lvm.conf

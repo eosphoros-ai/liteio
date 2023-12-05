@@ -331,6 +331,11 @@ func (r *AntstorVolumeGroupReconciler) scheduleVolGroup(ctx *plugin.Context, vol
 	if err != nil {
 		// TODO: update status
 		log.Error(err, "sched volumegroup failed, retry in 1 min")
+		volGroup.Status.Message = err.Error()
+		updateErr := r.Status().Update(ctx.Ctx, volGroup)
+		if updateErr != nil {
+			log.Error(updateErr, err.Error())
+		}
 		return plugin.Result{Break: true, Result: ctrl.Result{RequeueAfter: time.Minute}}
 	}
 

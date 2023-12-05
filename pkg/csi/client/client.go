@@ -6,6 +6,7 @@ import (
 
 	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/generated/clientset/versioned"
+	"code.alipay.com/dbplatform/node-disk-controller/pkg/util"
 	uuid "github.com/satori/go.uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	rest "k8s.io/client-go/rest"
@@ -13,7 +14,7 @@ import (
 )
 
 var (
-	fourMiB uint64             = 1 << 22
+	fourMiB uint64             = uint64(util.FourMiB)
 	_       AntstorClientIface = &KubeAPIClient{}
 
 	ErrorNotFoundResource = fmt.Errorf("ResourceNotFound")
