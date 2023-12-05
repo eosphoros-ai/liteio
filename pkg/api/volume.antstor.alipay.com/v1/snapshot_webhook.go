@@ -1,14 +1,11 @@
 package v1
 
 import (
+	"code.alipay.com/dbplatform/node-disk-controller/pkg/util"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-)
-
-const (
-	fourMiB int64 = 1 << 22
 )
 
 // log is for logging in this package.
@@ -26,8 +23,8 @@ var _ webhook.Defaulter = &AntstorSnapshot{}
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type
 func (r *AntstorSnapshot) Default() {
-	if remainder := r.Spec.Size % fourMiB; remainder > 0 {
-		r.Spec.Size = (r.Spec.Size / fourMiB) * fourMiB
+	if remainder := r.Spec.Size % util.FourMiB; remainder > 0 {
+		r.Spec.Size = (r.Spec.Size / util.FourMiB) * util.FourMiB
 		snaplog.Info("defaulter", "name", r.Name, "set Size=", r.Spec.Size)
 	}
 }

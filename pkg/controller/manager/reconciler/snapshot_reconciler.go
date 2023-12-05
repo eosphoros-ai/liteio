@@ -8,6 +8,7 @@ import (
 
 	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/generated/clientset/versioned"
+	"code.alipay.com/dbplatform/node-disk-controller/pkg/util"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -24,8 +25,6 @@ const (
 	SnapshotCreateFailure = "SnapshotCreateFailure"
 	SnapshotMergeFailure  = "SnapshotMergeFailure"
 	SnapshotDeleteFailure = "SnapshotDeleteFailure"
-
-	fourMiB int64 = 1 << 22
 )
 
 type SnapshotReconciler struct {
@@ -123,12 +122,12 @@ func (r *SnapshotReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	// TODO: validate Snapshot
 	// 1. size align to 4MiB
-	if obj.Spec.Size < fourMiB {
+	if obj.Spec.Size < util.FourMiB {
 		r.EventRecorder.Event(&obj, corev1.EventTypeWarning, SnapshotCreateFailure, "size too small, at least 4MiB")
 		return ctrl.Result{}, nil
 	}
-	if remainder := obj.Spec.Size % fourMiB; remainder > 0 {
-		obj.Spec.Size = (obj.Spec.Size / fourMiB) * fourMiB
+	if remainder := obj.Spec.Size % util.FourMiB; remainder > 0 {
+		obj.Spec.Size = (obj.Spec.Size / util.FourMiB) * util.FourMiB
 		err = r.Update(context.Background(), &obj)
 		return ctrl.Result{}, err
 	}

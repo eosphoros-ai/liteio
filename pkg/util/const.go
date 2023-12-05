@@ -21,3 +21,7 @@ const (
 	KubeConfigUserAgent = "obnvmf-node-disk/v0.0.1"
 	KubeCfgUserAgentCSI = "obnvmf-csi/v0.0.1"
 )
+
+const (
+	FourMiB int64 = 1 << 22
+)

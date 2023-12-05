@@ -2,11 +2,13 @@ package scheduler
 
 import (
 	"fmt"
+	"math"
 	"sort"
 
 	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/scheduler/filter"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/state"
+	"code.alipay.com/dbplatform/node-disk-controller/pkg/util"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/misc"
 	uuid "github.com/satori/go.uuid"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -14,8 +16,6 @@ import (
 )
 
 var (
-	fourMiB int64 = 1 << 22
-
 	ExtraPickSizeFnMap = make(map[string]GetAllocatableVolumeSizeFn)
 )
 
@@ -31,6 +31,7 @@ func (s *scheduler) ScheduleVolumeGroup(allNodes []*state.Node, volGroup *v1.Ant
 		scheduledSize int64
 		needSched     bool
 		volGroupCopy  = volGroup.DeepCopy()
+		qualified     []*state.Node
 	)
 
 	// check unscheduled
@@ -49,7 +50,11 @@ func (s *scheduler) ScheduleVolumeGroup(allNodes []*state.Node, volGroup *v1.Ant
 	defer s.lock.Unlock()
 
 	// filter qualified nodes
-	qualified := s.filterNodes(allNodes, volGroupCopy)
+	qualified, err = s.filterNodes(allNodes, volGroupCopy)
+	if err != nil {
+		klog.Error(err)
+		return
+	}
 
 	// sort nodes by free space, large -> small
 	// node usage < empty threashold, set score to 0, last of the list
@@ -57,6 +62,7 @@ func (s *scheduler) ScheduleVolumeGroup(allNodes []*state.Node, volGroup *v1.Ant
 
 	err = schedVolGroup(qualified, volGroup)
 	if err != nil {
+		klog.Error(err)
 		return
 	}
 
@@ -93,9 +99,9 @@ func schedVolGroup(nodes []*state.Node, volGroup *v1.AntstorVolumeGroup) (err er
 
 		// align to 4MiB
 		bytes := int64(picked.AsApproximateFloat64())
-		result = (bytes / fourMiB) * fourMiB
-		if bytes%fourMiB > 0 {
-			result += fourMiB
+		result = (bytes / util.FourMiB) * util.FourMiB
+		if bytes%util.FourMiB > 0 {
+			result += util.FourMiB
 		}
 		return
 	}
@@ -209,52 +215,42 @@ func schedVolGroup(nodes []*state.Node, volGroup *v1.AntstorVolumeGroup) (err er
 	return
 }
 
-func (s *scheduler) filterNodes(allNodes []*state.Node, volGroup *v1.AntstorVolumeGroup) (qualified []*state.Node) {
+func (s *scheduler) filterNodes(allNodes []*state.Node, volGroup *v1.AntstorVolumeGroup) (qualified []*state.Node, err error) {
 	var (
-		minSize         = volGroup.Spec.DesiredVolumeSpec.SizeRange.Min
-		maxRemoteVolCnt = s.cfg.Scheduler.MaxRemoteVolumeCount
+		minSize = volGroup.Spec.DesiredVolumeSpec.SizeRange.Min
+		// Here we build a fake AntstorVolume, which has minSize size and emtpy HostNode.
+		// Therefore the filter only checks pool status, pool affinity in Annotation, remote volume count,
+		// and SPDK condition because host node id is always different from target node id.
+		// filter will make sure that pool free size is larger than minSize
+		vol = &v1.AntstorVolume{
+			ObjectMeta: volGroup.ObjectMeta,
+			Spec: v1.AntstorVolumeSpec{
+				SizeByte:       uint64(math.Round(minSize.AsApproximateFloat64())),
+				HostNode:       &v1.NodeInfo{},
+				PositionAdvice: v1.NoPreference,
+			},
+		}
 	)
 
 	// filter out unqualified nodes
-	for _, node := range allNodes {
-		// pool status
-		if !node.Pool.IsSchedulable() {
-			continue
-		}
-
-		// node free space < min size
-		free := node.FreeResource.Storage()
-		if free.Cmp(minSize) < 0 {
-			continue
-		}
-
-		// node spdk unhealthy
-		var spdkCond = v1.StatusError
-		for _, cond := range node.Pool.Status.Conditions {
-			if cond.Type == v1.PoolConditionSpkdHealth {
-				spdkCond = cond.Status
+	qualified, err = filter.NewFilterChain(s.cfg.Scheduler).
+		Filter(func(ctx *filter.FilterContext, node *state.Node, vol *v1.AntstorVolume) bool {
+			// filter empty node
+			if !volGroup.Spec.Stragety.AllowEmptyNode {
+				if len(node.Volumes) == 0 {
+					klog.Infof("[SchedFail] volGroup=%s Pool %s, Pool is empty", volGroup.Name, node.Pool.Name)
+					return false
+				}
+				// TODO: compare with volGroup.Spec.Stragety.EmptyThreasholdPct
 			}
-		}
-		if spdkCond != v1.StatusOK {
-			continue
-		}
+			return true
+		}).
+		Input(allNodes, vol).
+		LoadFilterFromConfig().
+		MatchAll()
 
-		// filter empty node
-		if !volGroup.Spec.Stragety.AllowEmptyNode {
-			freeFloat := free.AsApproximateFloat64()
-			total := node.Pool.GetVgTotalBytes()
-			// if node's real usage < EmptyThreasholdPct, the node is considered as empty
-			if (float64(total)-freeFloat)/float64(total)*100 <= float64(volGroup.Spec.Stragety.EmptyThreasholdPct) {
-				continue
-			}
-		}
-
-		// remote volume count
-		if node.RemoteVolumesCount(s.cfg.Scheduler.RemoteIgnoreAnnoSelector)+1 >= maxRemoteVolCnt {
-			continue
-		}
-
-		qualified = append(qualified, node)
+	if len(qualified) == 0 {
+		return
 	}
 
 	return
