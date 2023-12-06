@@ -206,11 +206,13 @@ No resources found
 
 ### Data Engine: SPDK LVS
 
-The csi-node depends on `nvme` command-line tool to connect remote targets. Run following commands to install nvme client.
-```
-sudo yum install -y nvme-cli
+~~The csi-node depends on `nvme` command-line tool to connect remote targets. Run following commands to install nvme client.~~
+`nvme` client is installed in CSI base image. If you want to override the `nvme` command in container, you could run the following commands.
+CSI-node checks file `/home/admin/nvmeof/bin/nvme` at first priority, then looks for `nvme` in PATH.
 
-# csi-node uses file /home/admin/nvmeof/bin/nvme
+```
+# prepare your own nvme client and copy to /home/admin/nvmeof/bin/nvme
+sudo yum install -y nvme-cli
 sudo cp /usr/sbin/nvme /home/admin/nvmeof/bin/
 ```
 
@@ -219,7 +221,7 @@ sudo cp /usr/sbin/nvme /home/admin/nvmeof/bin/
 kubectl create -f hack/deploy/base/
 
 # create nvmf_tgt daemonset and configmap
-kubectl create -f hack/deploy/base/aio-lvs
+kubectl create -f hack/deploy/aio-lvs
 ```
 
 The disk-agent config will create a normal file `/local-storage/aio-lvs` of 1GiB and create an AIOBdev, which is used to create a LVS.
@@ -265,7 +267,7 @@ status:
 #### Deploy Pod and PVC
 
 ```
-$ kubectl create -f pod.yaml
+$ kubectl create -f hack/deploy/example/pod.yaml
 pod/test-pod created
 persistentvolumeclaim/pvc-obnvmf-test created
 
