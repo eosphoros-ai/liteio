@@ -208,7 +208,7 @@ No resources found
 
 ~~The csi-node depends on `nvme` command-line tool to connect remote targets. Run following commands to install nvme client.~~
 `nvme` client is installed in CSI base image. If you want to override the `nvme` command in container, you could run the following commands.
-CSI-node checks file `/home/admin/nvmeof/bin/nvme` at first priority, then looks for `nvme` in PATH.
+CSI-node checks the file `/home/admin/nvmeof/bin/nvme` first, then looks for `nvme` in PATH.
 
 ```
 # prepare your own nvme client and copy to /home/admin/nvmeof/bin/nvme
