@@ -28,6 +28,8 @@ type SchedulerConfig struct {
 	// NodeCacheSelector specify which nodes are cached to Node Informer.
 	// Empty selector means all nodes are allowd to be cached.
 	NodeCacheSelector map[string]string `json:"nodeCacheSelector" yaml:"nodeCacheSelector"`
+	// MinLocalStoragePct defines the minimun percentage of local storage to be reserved on one node.
+	MinLocalStoragePct int `json:"minLocalStoragePct" yaml:"minLocalStoragePct"`
 }
 
 type NoScheduleConfig struct {
