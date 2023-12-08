@@ -100,7 +100,7 @@ func NewAndInitControllerManager(req NewManagerRequest) manager.Manager {
 			PoolUtil: poolUtil,
 			KubeCli:  kubeClient,
 		},
-		WatchType: &v1.AntstorDataControl{},
+		WatchType: &v1.StoragePool{},
 	}
 	if err = poolReconciler.SetupWithManager(mgr); err != nil {
 		klog.Error(err, "unable to create controller StoragePoolReconciler")
@@ -123,7 +123,7 @@ func NewAndInitControllerManager(req NewManagerRequest) manager.Manager {
 			AntstoreCli: antstorCli,
 			Scheduler:   scheduler,
 		},
-		WatchType: &v1.AntstorDataControl{},
+		WatchType: &v1.AntstorVolume{},
 	}
 	if err = volReconciler.SetupWithManager(mgr); err != nil {
 		klog.Error(err, "unable to create controller VolumeReconciler")
@@ -145,7 +145,7 @@ func NewAndInitControllerManager(req NewManagerRequest) manager.Manager {
 			Scheduler: scheduler,
 			State:     stateObj,
 		},
-		WatchType: &v1.AntstorDataControl{},
+		WatchType: &v1.AntstorVolumeGroup{},
 	}
 	if err = volGroupReconciler.SetupWithManager(mgr); err != nil {
 		klog.Error(err, "unable to create controller VolumeGroupReconciler")
