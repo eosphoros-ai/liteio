@@ -85,27 +85,49 @@ func NewAndInitControllerManager(req NewManagerRequest) manager.Manager {
 		scheduler  = sched.NewScheduler(req.ControllerConfig)
 	)
 
-	// setup StoragePoolReconciler
-	poolReconciler := &reconciler.StoragePoolReconciler{
-		Plugable: plugin.NewPluginList(),
+	poolReconciler := reconciler.PlugableReconciler{
 		Client:   mgr.GetClient(),
-		Log:      rt.Log.WithName("controllers").WithName("StoragePool"),
-		State:    stateObj,
-		PoolUtil: poolUtil,
-		KubeCli:  kubeClient,
-		Lock:     misc.NewResourceLocks(),
+		Plugable: plugin.NewPluginList(),
+
+		Log:     rt.Log.WithName("Controller:StoragePool"),
+		KubeCli: kubeClient,
+		State:   stateObj,
+
+		Concurrency: 4,
+		MainHandler: &reconciler.StoragePoolReconcileHandler{
+			Client:   mgr.GetClient(),
+			State:    stateObj,
+			PoolUtil: poolUtil,
+			KubeCli:  kubeClient,
+		},
+		WatchType: &v1.AntstorDataControl{},
+	}
+	if err = poolReconciler.SetupWithManager(mgr); err != nil {
+		klog.Error(err, "unable to create controller StoragePoolReconciler")
+		os.Exit(1)
 	}
 
 	// setup AntstorVolumeReconciler
-	volReconciler := &reconciler.AntstorVolumeReconciler{
-		Plugable:    plugin.NewPluginList(),
-		Client:      mgr.GetClient(),
-		Log:         rt.Log.WithName("controllers").WithName("AntstorVolume"),
-		State:       stateObj,
-		AntstoreCli: antstorCli,
-		Scheduler:   scheduler,
-		// EventRecorder for AntstorVolume
-		EventRecorder: mgr.GetEventRecorderFor("AntstorVolume"),
+	volReconciler := reconciler.PlugableReconciler{
+		Client:   mgr.GetClient(),
+		Plugable: plugin.NewPluginList(),
+
+		Log:     rt.Log.WithName("Controller:AntstorVolume"),
+		KubeCli: kubeClient,
+		State:   stateObj,
+
+		Concurrency: 1,
+		MainHandler: &reconciler.AntstorVolumeReconcileHandler{
+			Client:      mgr.GetClient(),
+			State:       stateObj,
+			AntstoreCli: antstorCli,
+			Scheduler:   scheduler,
+		},
+		WatchType: &v1.AntstorDataControl{},
+	}
+	if err = volReconciler.SetupWithManager(mgr); err != nil {
+		klog.Error(err, "unable to create controller VolumeReconciler")
+		os.Exit(1)
 	}
 
 	// setup AntstorVolumeGroupReconciler
@@ -188,16 +210,6 @@ func NewAndInitControllerManager(req NewManagerRequest) manager.Manager {
 			klog.Fatal(err)
 		}
 		dataControlReconciler.RegisterPlugin(p)
-	}
-
-	// setup StoragePool/Volume Reconciler
-	if err = poolReconciler.SetupWithManager(mgr); err != nil {
-		klog.Error(err, "unable to create controller StoragePoolReconciler")
-		os.Exit(1)
-	}
-	if err = volReconciler.SetupWithManager(mgr); err != nil {
-		klog.Error(err, "unable to create controller VolumeReconciler")
-		os.Exit(1)
 	}
 
 	// setup SnapshotReconsiler

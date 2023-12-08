@@ -3,6 +3,7 @@ package reconciler
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -17,6 +18,7 @@ import (
 
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/reconciler/plugin"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/state"
+	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/misc"
 )
 
 type PlugableReconcilerIface interface {
@@ -31,9 +33,11 @@ type ReconcileHandler interface {
 	HandleDeletion(*plugin.Context) plugin.Result
 }
 
-type SetupWithManagerIface interface {
-	SetupWithManager(mgr ctrl.Manager) error
+type SetupWithManagerProvider interface {
+	GetSetupWithManagerFn() SetupWithManagerFn
 }
+
+type SetupWithManagerFn func(r reconcile.Reconciler, mgr ctrl.Manager) error
 
 type PlugableReconciler struct {
 	client.Client
@@ -46,17 +50,24 @@ type PlugableReconciler struct {
 	Concurrency int
 	WatchType   client.Object
 	MainHandler ReconcileHandler
+
+	Lock misc.ResourceLockIface
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *PlugableReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	if setup, ok := r.MainHandler.(SetupWithManagerIface); ok {
-		return setup.SetupWithManager(mgr)
+	if setupProvider, ok := r.MainHandler.(SetupWithManagerProvider); ok {
+		fn := setupProvider.GetSetupWithManagerFn()
+		return fn(r, mgr)
 	}
 
 	if r.Concurrency <= 0 {
 		r.Concurrency = 1
 	}
+	if r.Concurrency > 1 {
+		r.Lock = misc.NewResourceLocks()
+	}
+
 	if r.WatchType == nil {
 		return fmt.Errorf("WatchType is nil")
 	}
@@ -78,6 +89,15 @@ func (r *PlugableReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		obj        runtime.Object
 		metaObj    metav1.Object
 	)
+
+	if r.Lock != nil {
+		// try to get lock by id (ns/name)
+		if !r.Lock.TryAcquire(resourceID) {
+			log.Info("cannot get lock of the storagepool, try reconciling in 10 sec")
+			return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+		}
+		defer r.Lock.Release(resourceID)
+	}
 
 	if obj, err = r.MainHandler.GetObject(plugin.RequestContent{
 		Ctx:     ctx,

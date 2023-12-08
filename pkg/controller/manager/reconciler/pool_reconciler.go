@@ -12,10 +12,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
@@ -36,125 +36,77 @@ var (
 	nodeOfflineExpireDuration = 24 * time.Hour
 )
 
-type StoragePoolReconciler struct {
+type StoragePoolReconcileHandler struct {
 	client.Client
-	plugin.Plugable
-	//
-	Log logr.Logger
-	//
-	// NodeGetter kubeutil.NodeInfoGetterIface
+
 	State    state.StateIface
 	PoolUtil kubeutil.StoragePoolUpdater
 	KubeCli  kubernetes.Interface
-	//
-	Lock misc.ResourceLockIface
 }
 
-// SetupWithManager sets up the controller with the Manager.
-func (r *StoragePoolReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	// setup indexer
-	// mgr.GetFieldIndexer().IndexField(context.Background(), obj client.Object, field string, extractValue client.IndexerFunc)
-
-	var concurrency = 1
-	if r.Lock != nil {
-		concurrency = 4
-	}
-	return ctrl.NewControllerManagedBy(mgr).
-		WithOptions(controller.Options{
-			MaxConcurrentReconciles: concurrency,
-		}).
-		For(&v1.StoragePool{}).
-		Complete(r)
+func (r *StoragePoolReconcileHandler) ResourceName() string {
+	return "StoragePool"
 }
 
-func (r *StoragePoolReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *StoragePoolReconcileHandler) GetObject(req plugin.RequestContent) (obj runtime.Object, err error) {
+	var pool v1.StoragePool
+	err = r.Client.Get(req.Ctx, req.Request.NamespacedName, &pool)
+	return &pool, err
+}
+
+func (r *StoragePoolReconcileHandler) HandleDeletion(pCtx *plugin.Context) (result plugin.Result) {
+	result.Result, result.Error = r.handleDeletion(pCtx)
+	return
+}
+
+func (r *StoragePoolReconcileHandler) HandleReconcile(pCtx *plugin.Context) (result plugin.Result) {
 	var (
-		resourceID = req.NamespacedName.String()
-		log        = r.Log.WithValues("StoragePool", resourceID)
-		sp         v1.StoragePool
-		err        error
-		result     plugin.Result
-		pCtx       = &plugin.Context{
-			Client:  r.Client,
-			KubeCli: r.KubeCli,
-			Ctx:     ctx,
-			Object:  &sp,
-			Request: req,
-			Log:     log,
-			State:   r.State,
-		}
+		log = pCtx.Log
+		ctx = pCtx.ReqCtx.Ctx
+		sp  *v1.StoragePool
+		ok  bool
 	)
 
-	// try get lock by id (ns/name)
-	if !r.Lock.TryAcquire(resourceID) {
-		log.Info("cannot get lock of the storagepool, skip reconciling.")
-		return ctrl.Result{}, nil
-	}
-	defer r.Lock.Release(resourceID)
-
-	if err := r.Get(ctx, req.NamespacedName, &sp); err != nil {
-		// When user deleted a volume, a request will be recieved.
-		// However the volume does not exists. Therefore the code goes to here
-		log.Error(err, "unable to fetch StoragePool")
-		// we'll ignore not-found errors, since they can't be fixed by an immediate
-		// requeue (we'll need to wait for a new notification), and we can get them
-		// on deleted requests.
-		if errors.IsNotFound(err) {
-			// remove SP from State
-			log.Info("cannot find StoragePool in apiserver, so remove it from State", "error", r.State.RemoveStoragePool(req.Name))
-		}
-
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-
-	// not handle delete request
-	if sp.DeletionTimestamp != nil {
-		// run plugins
-		for _, plugin := range r.Plugable.Plugins() {
-			plugin.HandleDeletion(pCtx)
-		}
-		return r.handleDeletion(ctx, sp, log)
+	if sp, ok = pCtx.ReqCtx.Object.(*v1.StoragePool); !ok {
+		result.Error = fmt.Errorf("object is not *v1.AntstorVolumeGroup, %#v", pCtx.ReqCtx.Object)
+		return
 	}
 
 	// TODO: move to webhook
 	// validate and mutate StoragePool
 	result = r.validateAndMutate(sp, log)
 	if result.NeedBreak() {
-		return result.Result, result.Error
+		return
 	}
 
 	// save StoragePool to State
 	result = r.saveToState(sp, log)
 	if result.NeedBreak() {
-		return result.Result, result.Error
+		return
 	}
 
 	// check
-	err = r.checkHeartbeat(ctx, sp, log)
+	err := r.checkHeartbeat(ctx, sp, log)
 	if err != nil {
 		log.Error(err, "checking heartbeat with error")
+		result.Error = err
+		return
 	}
 
 	// check if node is deleted
 	result = r.processNodeOffline(sp, log)
 	if result.NeedBreak() {
-		return result.Result, result.Error
-	}
-
-	// run plugins
-	for _, plugin := range r.Plugable.Plugins() {
-		result = plugin.Reconcile(pCtx)
-		if result.NeedBreak() {
-			return result.Result, result.Error
-		}
+		return
 	}
 
 	// requeue StoragePool every 5 minutes, to check heartbeat and check Node status
-	return ctrl.Result{RequeueAfter: 5 * time.Minute}, nil
+	return plugin.Result{
+		Result: ctrl.Result{RequeueAfter: 5 * time.Minute},
+	}
 }
 
 // checkHeartbeat check Lease and update StoragePool's status
-func (r *StoragePoolReconciler) checkHeartbeat(ctx context.Context, sp v1.StoragePool, log logr.Logger) (err error) {
+func (r *StoragePoolReconcileHandler) checkHeartbeat(ctx context.Context, sp *v1.StoragePool, log logr.Logger) (err error) {
 	var (
 		leaseCli = r.KubeCli.CoordinationV1().Leases(LeaseNamespace)
 		lease    *coorv1.Lease
@@ -219,8 +171,18 @@ func (r *StoragePoolReconciler) checkHeartbeat(ctx context.Context, sp v1.Storag
 	return
 }
 
-func (r *StoragePoolReconciler) handleDeletion(ctx context.Context, sp v1.StoragePool, log logr.Logger) (result reconcile.Result, err error) {
-	var node *state.Node
+func (r *StoragePoolReconcileHandler) handleDeletion(pCtx *plugin.Context) (result reconcile.Result, err error) {
+	var (
+		log  = pCtx.Log
+		ctx  = pCtx.ReqCtx.Ctx
+		sp   *v1.StoragePool
+		ok   bool
+		node *state.Node
+	)
+	if sp, ok = pCtx.ReqCtx.Object.(*v1.StoragePool); !ok {
+		err = fmt.Errorf("object is not *v1.AntstorVolumeGroup, %#v", pCtx.ReqCtx.Object)
+		return
+	}
 	var name = sp.Name
 
 	node, err = r.State.GetNodeByNodeID(name)
@@ -235,7 +197,7 @@ func (r *StoragePoolReconciler) handleDeletion(ctx context.Context, sp v1.Storag
 		}
 		if !strings.HasPrefix(sp.Status.Message, "Volumes left on node") {
 			sp.Status.Message = "Volumes left on node: " + strings.Join(volNames, ", ")
-			err = r.Client.Status().Update(ctx, &sp)
+			err = r.Client.Status().Update(ctx, sp)
 			if err != nil {
 				log.Error(err, "updating StoragePool status failed")
 			}
@@ -253,7 +215,7 @@ func (r *StoragePoolReconciler) handleDeletion(ctx context.Context, sp v1.Storag
 		log.Info("remove finalizers of StoragePool")
 		// remove Finalizers
 		sp.Finalizers = []string{}
-		err = r.Client.Update(ctx, &sp)
+		err = r.Client.Update(ctx, sp)
 		if err != nil {
 			log.Error(err, "removing finalizer failed")
 		}
@@ -262,17 +224,17 @@ func (r *StoragePoolReconciler) handleDeletion(ctx context.Context, sp v1.Storag
 	return ctrl.Result{}, nil
 }
 
-func (r *StoragePoolReconciler) saveToState(sp v1.StoragePool, log logr.Logger) (result plugin.Result) {
+func (r *StoragePoolReconcileHandler) saveToState(sp *v1.StoragePool, log logr.Logger) (result plugin.Result) {
 	var patch = client.MergeFrom(sp.DeepCopy())
 	var err error
 
-	r.State.SetStoragePool(&sp)
+	r.State.SetStoragePool(sp)
 
 	if !misc.InSliceString(v1.InStateFinalizer, sp.Finalizers) {
 		sp.Finalizers = append(sp.Finalizers, v1.InStateFinalizer)
 		// do update in APIServer
 		log.Info("inject InStateFinalizer to pool")
-		err = r.Patch(context.Background(), &sp, patch)
+		err = r.Patch(context.Background(), sp, patch)
 		if err != nil {
 			log.Error(err, "Update StoragePool failed")
 		}
@@ -285,7 +247,7 @@ func (r *StoragePoolReconciler) saveToState(sp v1.StoragePool, log logr.Logger) 
 	return plugin.Result{}
 }
 
-func (r *StoragePoolReconciler) validateAndMutate(sp v1.StoragePool, log logr.Logger) (result plugin.Result) {
+func (r *StoragePoolReconcileHandler) validateAndMutate(sp *v1.StoragePool, log logr.Logger) (result plugin.Result) {
 	var err error
 	var patch = client.MergeFrom(sp.DeepCopy())
 
@@ -303,7 +265,7 @@ func (r *StoragePoolReconciler) validateAndMutate(sp v1.StoragePool, log logr.Lo
 	if len(sp.Labels) == 0 {
 		sp.Labels = make(map[string]string)
 		sp.Labels[v1.PoolLabelsNodeSnKey] = sp.Name
-		err = r.Patch(context.Background(), &sp, patch)
+		err = r.Patch(context.Background(), sp, patch)
 		if err != nil {
 			log.Error(err, "Update StoragePool Labels failed")
 		}
@@ -325,7 +287,7 @@ func (r *StoragePoolReconciler) validateAndMutate(sp v1.StoragePool, log logr.Lo
 		sp.Status.Capacity[v1.ResourceDiskPoolByte] = *quant
 
 		log.Info("update pool status and capacity", "status", sp.Status)
-		err = r.Status().Update(context.Background(), &sp)
+		err = r.Status().Update(context.Background(), sp)
 		if err != nil {
 			log.Error(err, "update StoragePool/Status failed")
 		}
@@ -338,7 +300,7 @@ func (r *StoragePoolReconciler) validateAndMutate(sp v1.StoragePool, log logr.Lo
 	return plugin.Result{}
 }
 
-func (r *StoragePoolReconciler) processNodeOffline(sp v1.StoragePool, log logr.Logger) (result plugin.Result) {
+func (r *StoragePoolReconcileHandler) processNodeOffline(sp *v1.StoragePool, log logr.Logger) (result plugin.Result) {
 	/*
 		Question: If node does not exist, is it safe to delete the associating StoragePool;
 		Condition:
@@ -379,7 +341,7 @@ func (r *StoragePoolReconciler) processNodeOffline(sp v1.StoragePool, log logr.L
 
 		if nodeNotFound {
 			log.Info("deleting StoragePool because node does not exist anymore")
-			err = r.Delete(context.Background(), &sp)
+			err = r.Delete(context.Background(), sp)
 			if err != nil {
 				log.Error(err, "deleting StoragePool failed")
 				return plugin.Result{Error: err}
