@@ -389,30 +389,3 @@ func (r *StoragePoolReconciler) processNodeOffline(sp v1.StoragePool, log logr.L
 
 	return plugin.Result{}
 }
-
-/*
-// TODO: move to agent
-func (r *StoragePoolReconciler) fillNodeInfo(sp v1.StoragePool, log logr.Logger, newNodeInfo v1.NodeInfo) (needReturn bool, result reconcile.Result, err error) {
-	var patch = client.MergeFrom(sp.DeepCopy())
-	if kubeutil.IsNodeInfoDifferent(sp.Spec.NodeInfo, newNodeInfo) {
-		sp.Spec.NodeInfo = newNodeInfo
-		sp.Spec.Addresses = []corev1.NodeAddress{
-			{
-				Type:    corev1.NodeInternalIP,
-				Address: newNodeInfo.IP,
-			},
-		}
-		// do update in APIServer
-		log.Info("update NodeInfo of pool")
-		err = r.Patch(context.Background(), &sp, patch)
-		if err != nil {
-			log.Error(err, "update StoragePool failed")
-			return true, ctrl.Result{}, err
-		}
-		return true, ctrl.Result{}, nil
-	}
-
-	return false, ctrl.Result{}, nil
-}
-
-*/

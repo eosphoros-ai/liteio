@@ -26,8 +26,11 @@ func init() {
 	DataControlReconcilerPluginCreaters = append(DataControlReconcilerPluginCreaters, NewMetaSyncerPlugin)
 }
 
-func RegisterPlugins(poolPlugins, volumePlugins []PluginFactoryFunc) {
+func RegisterPluginsInPoolReconciler(poolPlugins []PluginFactoryFunc) {
 	PoolReconcilerPluginCreaters = append(PoolReconcilerPluginCreaters, poolPlugins...)
+}
+
+func RegisterPluginsInVolumeReconciler(volumePlugins []PluginFactoryFunc) {
 	VolumeReconcilerPluginCreaters = append(VolumeReconcilerPluginCreaters, volumePlugins...)
 }
 

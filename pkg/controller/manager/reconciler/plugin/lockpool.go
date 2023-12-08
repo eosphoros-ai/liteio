@@ -27,7 +27,7 @@ func (p *LockPoolPlugin) Name() string {
 func (p *LockPoolPlugin) Reconcile(ctx *Context) (result Result) {
 	var (
 		log = ctx.Log
-		obj = ctx.Object
+		obj = ctx.ReqCtx.Object
 		ok  bool
 		err error
 
@@ -41,7 +41,7 @@ func (p *LockPoolPlugin) Reconcile(ctx *Context) (result Result) {
 		return Result{}
 	}
 
-	err = p.Client.Get(ctx.Ctx, client.ObjectKey{
+	err = p.Client.Get(ctx.ReqCtx.Ctx, client.ObjectKey{
 		Name: sp.Name,
 	}, &node)
 	if err != nil {
@@ -104,7 +104,7 @@ func (p *LockPoolPlugin) Reconcile(ctx *Context) (result Result) {
 			sp.Status.Conditions[condIdx].Status = v1.StatusError
 			sp.Status.Conditions[condIdx].Message = v1.KubeNodeMsgNcOffline
 		}
-		err = p.Client.Status().Update(ctx.Ctx, sp)
+		err = p.Client.Status().Update(ctx.ReqCtx.Ctx, sp)
 		if err != nil {
 			return Result{Error: err}
 		}
@@ -115,7 +115,7 @@ func (p *LockPoolPlugin) Reconcile(ctx *Context) (result Result) {
 		log.Info("node is not in NC_OFFLINE, unlock storagepool", "name", sp.Name)
 		sp.Status.Conditions[condIdx].Status = v1.StatusOK
 		sp.Status.Conditions[condIdx].Message = ""
-		err = p.Client.Status().Update(ctx.Ctx, sp)
+		err = p.Client.Status().Update(ctx.ReqCtx.Ctx, sp)
 		if err != nil {
 			return Result{Error: err}
 		}

@@ -12,14 +12,19 @@ import (
 )
 
 type Context struct {
-	// client
+	// per reconciler
 	KubeCli kubernetes.Interface
 	Client  client.Client
+	State   state.StateIface
+	Log     logr.Logger
+	// per request
+	ReqCtx RequestContent
+}
+
+type RequestContent struct {
 	Ctx     context.Context
 	Request ctrl.Request
 	Object  runtime.Object
-	State   state.StateIface
-	Log     logr.Logger
 }
 
 type Result struct {

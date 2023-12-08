@@ -108,21 +108,42 @@ func NewAndInitControllerManager(req NewManagerRequest) manager.Manager {
 		EventRecorder: mgr.GetEventRecorderFor("AntstorVolume"),
 	}
 
-	volGroupReconciler := &reconciler.AntstorVolumeGroupReconciler{
-		Client:    mgr.GetClient(),
-		Plugable:  plugin.NewPluginList(),
-		Log:       rt.Log.WithName("controllers").WithName("AntstorVolumeGroup"),
-		Scheduler: scheduler,
-		State:     stateObj,
-	}
-
-	// setup AntstorDataControlReconciler
-	dataControlReconciler := &reconciler.AntstorDataControlReconciler{
+	// setup AntstorVolumeGroupReconciler
+	volGroupReconciler := reconciler.PlugableReconciler{
 		Client:   mgr.GetClient(),
 		Plugable: plugin.NewPluginList(),
 
-		Log:   rt.Log.WithName("controllers").WithName("DataControl"),
-		State: stateObj,
+		Log:     rt.Log.WithName("Controller:AntstorVolumeGroup"),
+		KubeCli: kubeClient,
+		State:   stateObj,
+
+		Concurrency: 1,
+		MainHandler: &reconciler.AntstorVolumeGroupReconcileHandler{
+			Client:    mgr.GetClient(),
+			Scheduler: scheduler,
+			State:     stateObj,
+		},
+		WatchType: &v1.AntstorDataControl{},
+	}
+	if err = volGroupReconciler.SetupWithManager(mgr); err != nil {
+		klog.Error(err, "unable to create controller VolumeGroupReconciler")
+		os.Exit(1)
+	}
+
+	// setup AntstorDataControlReconciler
+	dataControlReconciler := reconciler.PlugableReconciler{
+		Client:   mgr.GetClient(),
+		Plugable: plugin.NewPluginList(),
+
+		Log:     rt.Log.WithName("Controller:AntstorDataControl"),
+		KubeCli: kubeClient,
+		State:   stateObj,
+
+		Concurrency: 1,
+		MainHandler: &reconciler.AntstorDataControlReconcileHandler{
+			Client: mgr.GetClient(),
+		},
+		WatchType: &v1.AntstorDataControl{},
 	}
 	if err = dataControlReconciler.SetupWithManager(mgr); err != nil {
 		klog.Error(err, "unable to create controller AntstorDataControlReconciler")
@@ -176,10 +197,6 @@ func NewAndInitControllerManager(req NewManagerRequest) manager.Manager {
 	}
 	if err = volReconciler.SetupWithManager(mgr); err != nil {
 		klog.Error(err, "unable to create controller VolumeReconciler")
-		os.Exit(1)
-	}
-	if err = volGroupReconciler.SetupWithManager(mgr); err != nil {
-		klog.Error(err, "unable to create controller VolumeGroupReconciler")
 		os.Exit(1)
 	}
 

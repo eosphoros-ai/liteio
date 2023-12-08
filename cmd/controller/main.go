@@ -12,9 +12,10 @@ import (
 
 func main() {
 	// add plugins
-	controllers.RegisterPlugins([]controllers.PluginFactoryFunc{
+	controllers.RegisterPluginsInPoolReconciler([]controllers.PluginFactoryFunc{
 		antplugin.NewReportLocalStoragePlugin,
-	}, []controllers.PluginFactoryFunc{
+	})
+	controllers.RegisterPluginsInVolumeReconciler([]controllers.PluginFactoryFunc{
 		antplugin.NewReportLocalStoragePlugin,
 		antplugin.NewPatchPVPlugin,
 	})
