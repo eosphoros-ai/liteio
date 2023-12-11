@@ -44,7 +44,6 @@ func (p *PatchPVPlugin) Reconcile(ctx *plugin.Context) (result plugin.Result) {
 		return plugin.Result{}
 	}
 
-	log.Info("running PatchPVPlugin")
 	// get pv name from label
 	var pvName string
 	if val, has := volume.Labels[v1.VolumePVNameLabelKey]; has {
@@ -53,11 +52,15 @@ func (p *PatchPVPlugin) Reconcile(ctx *plugin.Context) (result plugin.Result) {
 		pvName = volume.Name
 	}
 
-	err = p.PvUtil.SetTargetNodeName(pvName, volume.Spec.TargetNodeId)
-	if err != nil {
-		log.Error(err, "updating PV label failed")
-		return plugin.Result{
-			Error: err,
+	if volume.Spec.TargetNodeId != "" {
+		log.Info("patching PV", "nodeId", volume.Spec.TargetNodeId, "pvName", pvName)
+
+		err = p.PvUtil.SetTargetNodeName(pvName, volume.Spec.TargetNodeId)
+		if err != nil {
+			log.Error(err, "updating PV label failed")
+			return plugin.Result{
+				Error: err,
+			}
 		}
 	}
 

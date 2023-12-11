@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 
 	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/kubeutil"
@@ -119,32 +118,35 @@ func (r *ReportLocalStoragePlugin) Reconcile(ctx *plugin.Context) (result plugin
 
 	// After remote volume is scheduled, report the local storage size to Node
 	if isVolume && volume != nil && volume.Spec.TargetNodeId != "" && !volume.IsLocal() {
-		var localStorePct int
-		var volInState *v1.AntstorVolume
-		node, err := stateObj.GetNodeByNodeID(volume.Spec.TargetNodeId)
+		var node *state.Node
+		node, err = stateObj.GetNodeByNodeID(volume.Spec.TargetNodeId)
 		if err != nil {
 			log.Error(err, "find node failed")
 			return plugin.Result{Error: err}
 		}
-		sp := node.Pool
+		var sp = node.Pool
 
-		for _, item := range r.ReportLocalConfigs {
-			selector, err := metav1.LabelSelectorAsSelector(&item.LabelSelector)
-			if err != nil {
-				log.Error(err, "LabelSelectorAsSelector failed", "selector", item.LabelSelector)
-				continue
+		/*
+			var localStorePct int
+			var volInState *v1.AntstorVolume
+			for _, item := range r.ReportLocalConfigs {
+				selector, err := metav1.LabelSelectorAsSelector(&item.LabelSelector)
+				if err != nil {
+					log.Error(err, "LabelSelectorAsSelector failed", "selector", item.LabelSelector)
+					continue
+				}
+				if selector.Matches(labels.Set(sp.Spec.NodeInfo.Labels)) && item.EnableDefault {
+					localStorePct = item.DefaultLocalStoragePct
+					log.Info("matched local-storage percentage", "pct", localStorePct)
+				}
 			}
-			if selector.Matches(labels.Set(sp.Spec.NodeInfo.Labels)) && item.EnableDefault {
-				localStorePct = item.DefaultLocalStoragePct
-				log.Info("matched local-storage percentage", "pct", localStorePct)
-			}
-		}
 
-		volInState, err = node.GetVolumeByID(volume.Spec.Uuid)
-		if err == nil {
-			log.Info("copy volume into state")
-			*volInState = *volume
-		}
+			volInState, err = node.GetVolumeByID(volume.Spec.Uuid)
+			if err == nil {
+				log.Info("copy volume into state")
+				*volInState = *volume
+			}
+		*/
 
 		var expectLocalSize = CalculateLocalStorageCapacity(node)
 		var localSizeStr = strconv.Itoa(int(expectLocalSize))
