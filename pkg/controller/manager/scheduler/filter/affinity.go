@@ -18,6 +18,7 @@ func AffinityFilterFunc(ctx *FilterContext, n *state.Node, vol *v1.AntstorVolume
 		match, err := schedcore.MatchNodeSelectorTerms(convertNodeInfo(n.Info), vol.Spec.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution)
 		if !match || err != nil {
 			klog.Infof("[SchedFail] vol=%s Pool %s NodeAffnity fail", vol.Name, n.Pool.Name)
+			ctx.Error.AddReason(ReasonNodeAffinity)
 			return false
 		}
 	}
@@ -31,6 +32,7 @@ func AffinityFilterFunc(ctx *FilterContext, n *state.Node, vol *v1.AntstorVolume
 			matched := selector.Matches(labels.Set(n.Info.Labels))
 			if !matched {
 				klog.Infof("[SchedFail] vol=%s Pool %s NodeLabelSelector fail", vol.Name, n.Pool.Name)
+				ctx.Error.AddReason(ReasonNodeAffinity)
 				return false
 			}
 		}
@@ -41,6 +43,7 @@ func AffinityFilterFunc(ctx *FilterContext, n *state.Node, vol *v1.AntstorVolume
 		match, err := schedcore.MatchNodeSelectorTerms(convertPoolLabels(n.Pool.Labels), vol.Spec.PoolAffinity.RequiredDuringSchedulingIgnoredDuringExecution)
 		if !match || err != nil {
 			klog.Infof("[SchedFail] vol=%s Pool %s PoolAffinity fail", vol.Name, n.Pool.Name)
+			ctx.Error.AddReason(ReasonPoolAffinity)
 			return false
 		}
 	}
@@ -52,6 +55,7 @@ func AffinityFilterFunc(ctx *FilterContext, n *state.Node, vol *v1.AntstorVolume
 			matched := selector.Matches(labels.Set(n.Pool.Labels))
 			if !matched {
 				klog.Infof("[SchedFail] vol=%s Pool %s PoolLabelSelector fail", vol.Name, n.Pool.Name)
+				ctx.Error.AddReason(ReasonPoolAffinity)
 				return false
 			}
 		}

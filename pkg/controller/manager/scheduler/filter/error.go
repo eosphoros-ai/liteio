@@ -13,6 +13,9 @@ const (
 	ReasonPositionNotMatch  = "PositionNotMatch"
 	ReasonVolTypeNotMatch   = "VolTypeNotMatch"
 	ReasonDataConflict      = "DataConflict"
+	ReasonNodeAffinity      = "NodeAffinity"
+	ReasonPoolAffinity      = "PoolAffinity"
+	ReasonPoolUnschedulable = "PoolUnschedulable"
 
 	NoStoragePoolAvailable = "NoStoragePoolAvailable"
 	//
