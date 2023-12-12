@@ -84,8 +84,8 @@ func (r *ReportLocalStoragePlugin) Reconcile(ctx *plugin.Context) (result plugin
 		r.PoolUtil = kubeutil.NewStoragePoolUtil(cli)
 	}
 
-	volume, isVolume = ctx.Object.(*v1.AntstorVolume)
-	pool, isPool = ctx.Object.(*v1.StoragePool)
+	volume, isVolume = ctx.ReqCtx.Object.(*v1.AntstorVolume)
+	pool, isPool = ctx.ReqCtx.Object.(*v1.StoragePool)
 
 	if !isVolume && !isPool {
 		err = fmt.Errorf("obj is not *v1.AntstorVolume or *v1.StoragePool")

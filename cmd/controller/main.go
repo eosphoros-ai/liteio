@@ -6,26 +6,22 @@ import (
 	antplugin "code.alipay.com/dbplatform/node-disk-controller/cmd/controller/antplugins"
 	antfilter "code.alipay.com/dbplatform/node-disk-controller/cmd/controller/antplugins/filter"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/controllers"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/scheduler"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/scheduler/filter"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/csi"
 )
 
 func main() {
 	// add plugins
-	controllers.RegisterPlugins([]controllers.PluginFactoryFunc{
+	controllers.RegisterPluginsInPoolReconciler([]controllers.PluginFactoryFunc{
 		antplugin.NewReportLocalStoragePlugin,
-	}, []controllers.PluginFactoryFunc{
+	})
+	controllers.RegisterPluginsInVolumeReconciler([]controllers.PluginFactoryFunc{
 		antplugin.NewReportLocalStoragePlugin,
 		antplugin.NewPatchPVPlugin,
 	})
 
 	// add filters
-	filter.RegisterFilter("MinLocalStorage", antfilter.MinLocalStorageFilterFunc)
 	filter.RegisterFilter("ObReplica", antfilter.ObReplicaFilterFunc)
-
-	// for volumegroup
-	scheduler.RegisterVolumeGroupPickSizeFn("MinLocalStorage", antfilter.GetAllocatableRemoveVolumeSize)
 
 	cmd := controllers.NewApplicationCmd()
 	// add CSI command

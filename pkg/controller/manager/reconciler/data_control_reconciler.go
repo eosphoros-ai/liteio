@@ -1,86 +1,55 @@
 package reconciler
 
 import (
-	"context"
 	"fmt"
 	"time"
 
-	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/reconciler/plugin"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/state"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/misc"
 )
 
-type AntstorDataControlReconciler struct {
+type AntstorDataControlReconcileHandler struct {
 	client.Client
-	plugin.Plugable
-
-	Log   logr.Logger
-	State state.StateIface
 }
 
-// SetupWithManager sets up the controller with the Manager.
-func (r *AntstorDataControlReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		WithOptions(controller.Options{
-			MaxConcurrentReconciles: 1,
-		}).
-		For(&v1.AntstorDataControl{}).
-		Complete(r)
+func (r *AntstorDataControlReconcileHandler) ResourceName() string {
+	return "AntstorDataControl"
 }
 
-func (r *AntstorDataControlReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *AntstorDataControlReconcileHandler) GetObject(req plugin.RequestContent) (obj runtime.Object, err error) {
+	var dataControl v1.AntstorDataControl
+	err = r.Client.Get(req.Ctx, req.Request.NamespacedName, &dataControl)
+	return &dataControl, err
+}
+
+func (r *AntstorDataControlReconcileHandler) HandleDeletion(ctx *plugin.Context) (reuslt plugin.Result) {
+	return
+}
+
+func (r *AntstorDataControlReconcileHandler) HandleReconcile(pCtx *plugin.Context) plugin.Result {
 	var (
-		resourceID  = req.NamespacedName.String()
-		log         = r.Log.WithValues("DataControl", resourceID)
-		dataControl v1.AntstorDataControl
-		err         error
-		result      plugin.Result
-		pCtx        = &plugin.Context{
-			Client:  r.Client,
-			Ctx:     ctx,
-			Object:  &dataControl,
-			Request: req,
-			Log:     log,
-			State:   r.State,
-		}
+		dataControl, ok = pCtx.ReqCtx.Object.(*v1.AntstorDataControl)
+		result          plugin.Result
+		ctx             = pCtx.ReqCtx.Ctx
+		err             error
+		log             = pCtx.Log
 	)
 
-	if err = r.Get(ctx, req.NamespacedName, &dataControl); err != nil {
-		// When user deleted a volume, a request will be recieved.
-		// However the volume does not exists. Therefore the code goes to here
-		log.Error(err, "unable to fetch DataControl")
-		// we'll ignore not-found errors, since they can't be fixed by an immediate
-		// requeue (we'll need to wait for a new notification), and we can get them
-		// on deleted requests.
-		if errors.IsNotFound(err) {
-			// remove SP from State
-			log.Info("cannot find DataControl in apiserver")
+	if !ok {
+		return plugin.Result{
+			Error: fmt.Errorf("object is not *v1.AntstorDataControl, %#v", pCtx.ReqCtx.Object),
 		}
-
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-
-	// not handle delete request
-	if dataControl.DeletionTimestamp != nil {
-		// run plugins
-		for _, plugin := range r.Plugable.Plugins() {
-			plugin.HandleDeletion(pCtx)
-		}
-		return r.handleDeletion(pCtx, &dataControl)
 	}
 
 	// validate and mutate DataControl
-	result = r.validateAndMutate(pCtx, &dataControl)
+	result = r.validateAndMutate(pCtx, dataControl)
 	if result.NeedBreak() {
-		return result.Result, result.Error
+		return result
 	}
 
 	// sync volume group status
@@ -99,7 +68,9 @@ func (r *AntstorDataControlReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 		if vg.Status.Status != v1.VolumeStatusReady {
 			log.Info("VolumeGroup is not ready yet, retry in 20 sec", "name", key, "status", vg.Status.Status)
-			return ctrl.Result{RequeueAfter: 20 * time.Second}, nil
+			return plugin.Result{
+				Result: ctrl.Result{RequeueAfter: 20 * time.Second},
+			}
 		}
 	}
 
@@ -127,7 +98,9 @@ func (r *AntstorDataControlReconciler) Reconcile(ctx context.Context, req ctrl.R
 			}, &volGroup)
 			if err != nil {
 				log.Error(err, "fetching VolGroup failed")
-				return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+				return plugin.Result{
+					Result: ctrl.Result{RequeueAfter: 10 * time.Second},
+				}
 			} else {
 				for _, item := range volGroup.Spec.Volumes {
 					var vol v1.AntstorVolume
@@ -137,23 +110,29 @@ func (r *AntstorDataControlReconciler) Reconcile(ctx context.Context, req ctrl.R
 					}, &vol)
 					if err != nil {
 						log.Error(err, "fetching VolGroup failed")
-						return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+						return plugin.Result{
+							Result: ctrl.Result{RequeueAfter: 10 * time.Second},
+						}
 					}
 					hostNode := dataControl.Spec.HostNode
 					vol.Spec.HostNode = &hostNode
 					err = r.Client.Update(ctx, &vol)
 					if err != nil {
 						log.Error(err, "updating Volume failed")
-						return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+						return plugin.Result{
+							Result: ctrl.Result{RequeueAfter: 10 * time.Second},
+						}
 					}
 				}
 			}
 		}
 
-		err = r.Client.Update(ctx, &dataControl)
+		err = r.Client.Update(ctx, dataControl)
 		if err != nil {
 			log.Error(err, "updating DataControl failed")
-			return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+			return plugin.Result{
+				Result: ctrl.Result{RequeueAfter: 10 * time.Second},
+			}
 		}
 	}
 
@@ -167,7 +146,9 @@ func (r *AntstorDataControlReconciler) Reconcile(ctx context.Context, req ctrl.R
 			}, &volGroup)
 			if err != nil {
 				log.Error(err, "fetching VolGroup failed")
-				return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+				return plugin.Result{
+					Result: ctrl.Result{RequeueAfter: 10 * time.Second},
+				}
 			} else {
 				for _, item := range volGroup.Spec.Volumes {
 					var vol v1.AntstorVolume
@@ -177,14 +158,18 @@ func (r *AntstorDataControlReconciler) Reconcile(ctx context.Context, req ctrl.R
 					}, &vol)
 					if err != nil {
 						log.Error(err, "fetching VolGroup failed")
-						return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+						return plugin.Result{
+							Result: ctrl.Result{RequeueAfter: 10 * time.Second},
+						}
 					}
 					if vol.Status.CSINodePubParams == nil || vol.Status.CSINodePubParams.TargetPath == "" {
 						vol.Status.CSINodePubParams = dataControl.Status.CSINodePubParams
 						err = r.Client.Status().Update(ctx, &vol)
 						if err != nil {
 							log.Error(err, "updating Volume Status failed")
-							return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+							return plugin.Result{
+								Result: ctrl.Result{RequeueAfter: 10 * time.Second},
+							}
 						}
 					}
 				}
@@ -192,24 +177,10 @@ func (r *AntstorDataControlReconciler) Reconcile(ctx context.Context, req ctrl.R
 		}
 	}
 
-	// run plugins
-	for _, plugin := range r.Plugable.Plugins() {
-		result = plugin.Reconcile(pCtx)
-		if result.NeedBreak() {
-			return result.Result, result.Error
-		}
-	}
-
-	return ctrl.Result{}, nil
+	return result
 }
 
-func (r *AntstorDataControlReconciler) handleDeletion(ctx *plugin.Context, dataControl *v1.AntstorDataControl) (result reconcile.Result, err error) {
-	// resouce cleaning is done in agent
-
-	return ctrl.Result{}, nil
-}
-
-func (r *AntstorDataControlReconciler) validateAndMutate(ctx *plugin.Context, dataControl *v1.AntstorDataControl) (result plugin.Result) {
+func (r *AntstorDataControlReconcileHandler) validateAndMutate(ctx *plugin.Context, dataControl *v1.AntstorDataControl) (result plugin.Result) {
 	if !misc.InSliceString(string(dataControl.Spec.EngineType),
 		[]string{string(v1.PoolModeKernelLVM), string(v1.PoolModeSpdkLVStore)}) {
 		return plugin.Result{Error: fmt.Errorf("invalid type %s", dataControl.Spec.EngineType)}

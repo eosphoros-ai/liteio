@@ -28,8 +28,8 @@ func (r *MetaSyncPlugin) Reconcile(ctx *Context) (result Result) {
 	}
 
 	var (
-		obj = ctx.Object
-		req = ctx.Request
+		obj = ctx.ReqCtx.Object
+		req = ctx.ReqCtx.Request
 	)
 	r.log = ctx.Log
 

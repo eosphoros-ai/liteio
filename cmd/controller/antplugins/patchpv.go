@@ -32,7 +32,7 @@ func (p *PatchPVPlugin) Reconcile(ctx *plugin.Context) (result plugin.Result) {
 
 	var (
 		log    = ctx.Log
-		obj    = ctx.Object
+		obj    = ctx.ReqCtx.Object
 		volume *v1.AntstorVolume
 		ok     bool
 		err    error
