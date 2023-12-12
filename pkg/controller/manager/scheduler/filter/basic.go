@@ -11,6 +11,7 @@ func BasicFilterFunc(ctx *FilterContext, n *state.Node, vol *v1.AntstorVolume) b
 	// consider Pool status
 	if !n.Pool.IsSchedulable() {
 		klog.Infof("[SchedFail] vol=%s Pool %s status is %s, or check Pool labels", vol.Name, n.Pool.Name, n.Pool.Status.Status)
+		ctx.Error.AddReason(ReasonPoolUnschedulable)
 		return false
 	}
 
