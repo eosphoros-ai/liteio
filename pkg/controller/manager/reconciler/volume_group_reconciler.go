@@ -7,13 +7,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
@@ -24,110 +23,80 @@ import (
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/misc"
 )
 
-type AntstorVolumeGroupReconciler struct {
+type AntstorVolumeGroupReconcileHandler struct {
 	client.Client
-	plugin.Plugable
 
-	Log       logr.Logger
 	State     state.StateIface
 	Scheduler sched.SchedulerIface
 }
 
-// SetupWithManager sets up the controller with the Manager.
-func (r *AntstorVolumeGroupReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		WithOptions(controller.Options{
-			MaxConcurrentReconciles: 1,
-		}).
-		For(&v1.AntstorVolumeGroup{}).
-		Complete(r)
+func (r *AntstorVolumeGroupReconcileHandler) ResourceName() string {
+	return "AntstorVolumeGroup"
 }
 
-func (r *AntstorVolumeGroupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *AntstorVolumeGroupReconcileHandler) GetObject(req plugin.RequestContent) (obj runtime.Object, err error) {
+	var volGroup v1.AntstorVolumeGroup
+	err = r.Client.Get(req.Ctx, req.Request.NamespacedName, &volGroup)
+	return &volGroup, err
+}
+
+func (r *AntstorVolumeGroupReconcileHandler) HandleDeletion(pCtx *plugin.Context) (result plugin.Result) {
+	result.Result, result.Error = r.handleDeletion(pCtx)
+	return
+}
+
+func (r *AntstorVolumeGroupReconcileHandler) HandleReconcile(pCtx *plugin.Context) (result plugin.Result) {
 	var (
-		resourceID = req.NamespacedName.String()
-		log        = r.Log.WithValues("VolumeGroup", resourceID)
-		volGroup   v1.AntstorVolumeGroup
-		err        error
-		result     plugin.Result
-		pCtx       = &plugin.Context{
-			Client:  r.Client,
-			Ctx:     ctx,
-			Object:  &volGroup,
-			Request: req,
-			Log:     log,
-			State:   r.State,
-		}
+		volGroup *v1.AntstorVolumeGroup
+		ok       bool
 	)
-
-	if err = r.Get(ctx, req.NamespacedName, &volGroup); err != nil {
-		// When user deleted a volume, a request will be recieved.
-		// However the volume does not exists. Therefore the code goes to here
-		log.Error(err, "unable to fetch VolumeGroup")
-		// we'll ignore not-found errors, since they can't be fixed by an immediate
-		// requeue (we'll need to wait for a new notification), and we can get them
-		// on deleted requests.
-		if errors.IsNotFound(err) {
-			// remove SP from State
-			log.Info("cannot find VolumeGroup in apiserver")
-		}
-
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-
-	// not handle delete request
-	if volGroup.DeletionTimestamp != nil {
-		// run plugins
-		for _, plugin := range r.Plugable.Plugins() {
-			plugin.HandleDeletion(pCtx)
-		}
-		return r.handleDeletion(pCtx, &volGroup)
+	if volGroup, ok = pCtx.ReqCtx.Object.(*v1.AntstorVolumeGroup); !ok {
+		result.Error = fmt.Errorf("object is not *v1.AntstorVolumeGroup, %#v", pCtx.ReqCtx.Object)
+		return
 	}
 
 	// validate and mutate VolumeGroup
-	result = r.validateAndMutate(pCtx, &volGroup)
+	result = r.validateAndMutate(pCtx, volGroup)
 	if result.NeedBreak() {
-		return result.Result, result.Error
+		return
 	}
 
 	// sync volume
-	result = r.syncVolumes(pCtx, &volGroup)
+	result = r.syncVolumes(pCtx, volGroup)
 	if result.NeedBreak() {
-		return result.Result, result.Error
+		return
 	}
 
-	result = r.rollbackUnrecoverable(pCtx, &volGroup)
+	result = r.rollbackUnrecoverable(pCtx, volGroup)
 	if result.NeedBreak() {
-		return result.Result, result.Error
+		return
 	}
 
 	// schedule volumes for volume group
-	result = r.scheduleVolGroup(pCtx, &volGroup)
+	result = r.scheduleVolGroup(pCtx, volGroup)
 	if result.NeedBreak() {
-		return result.Result, result.Error
-	}
-
-	// run plugins
-	for _, plugin := range r.Plugable.Plugins() {
-		result = plugin.Reconcile(pCtx)
-		if result.NeedBreak() {
-			return result.Result, result.Error
-		}
+		return
 	}
 
 	// if volumes are not all ready, reconcile the volGroup
-	result = r.waitVolumesReady(pCtx, &volGroup)
+	result = r.waitVolumesReady(pCtx, volGroup)
 	if result.NeedBreak() {
-		return result.Result, result.Error
+		return
 	}
 
-	return ctrl.Result{}, nil
+	return
 }
 
-func (r *AntstorVolumeGroupReconciler) handleDeletion(ctx *plugin.Context, volGroup *v1.AntstorVolumeGroup) (result reconcile.Result, err error) {
+func (r *AntstorVolumeGroupReconcileHandler) handleDeletion(ctx *plugin.Context) (result reconcile.Result, err error) {
 	var (
-		log = ctx.Log
+		log      = ctx.Log
+		volGroup *v1.AntstorVolumeGroup
+		ok       bool
 	)
+	if volGroup, ok = ctx.ReqCtx.Object.(*v1.AntstorVolumeGroup); !ok {
+		err = fmt.Errorf("object is not *v1.AntstorVolumeGroup, %#v", ctx.ReqCtx.Object)
+		return
+	}
 
 	// TODO: wait until data control is deleted
 	if val, has := volGroup.Labels[v1.DataControlNameKey]; has {
@@ -136,7 +105,7 @@ func (r *AntstorVolumeGroupReconciler) handleDeletion(ctx *plugin.Context, volGr
 			Namespace: v1.DefaultNamespace,
 			Name:      val,
 		}
-		err = r.Client.Get(ctx.Ctx, key, &dc)
+		err = r.Client.Get(ctx.ReqCtx.Ctx, key, &dc)
 		log.Info("try to find datacontrol", "key", key, "err", err)
 		if !errors.IsNotFound(err) {
 			log.Info("wait datacontrol to be deleted, retry in 20 second", "key", key)
@@ -152,11 +121,11 @@ func (r *AntstorVolumeGroupReconciler) handleDeletion(ctx *plugin.Context, volGr
 				Namespace: volMeta.VolId.Namespace,
 				Name:      volMeta.VolId.Name,
 			}
-			err = r.Client.Get(ctx.Ctx, key, &volume)
+			err = r.Client.Get(ctx.ReqCtx.Ctx, key, &volume)
 			if errors.IsNotFound(err) {
 				log.Info("volume is deleted", "vol", key)
 			} else {
-				err = r.Client.Delete(ctx.Ctx, &volume)
+				err = r.Client.Delete(ctx.ReqCtx.Ctx, &volume)
 				if err != nil {
 					log.Error(err, "delete vol failed. retry in 10 sec", "vol", key)
 					return reconcile.Result{RequeueAfter: 10 * time.Second}, nil
@@ -178,7 +147,7 @@ func (r *AntstorVolumeGroupReconciler) handleDeletion(ctx *plugin.Context, volGr
 		volGroup.Finalizers = append(volGroup.Finalizers[:toDelIdx], volGroup.Finalizers[toDelIdx+1:]...)
 
 		// update object
-		err = r.Client.Update(ctx.Ctx, volGroup)
+		err = r.Client.Update(ctx.ReqCtx.Ctx, volGroup)
 		if err != nil {
 			log.Error(err, "update volumegroup failed")
 			return ctrl.Result{}, err
@@ -188,7 +157,7 @@ func (r *AntstorVolumeGroupReconciler) handleDeletion(ctx *plugin.Context, volGr
 	return ctrl.Result{}, nil
 }
 
-func (r *AntstorVolumeGroupReconciler) validateAndMutate(ctx *plugin.Context, volGroup *v1.AntstorVolumeGroup) (result plugin.Result) {
+func (r *AntstorVolumeGroupReconcileHandler) validateAndMutate(ctx *plugin.Context, volGroup *v1.AntstorVolumeGroup) (result plugin.Result) {
 	var err error
 	var minQ = volGroup.Spec.DesiredVolumeSpec.SizeRange.Min
 	var maxQ = volGroup.Spec.DesiredVolumeSpec.SizeRange.Max
@@ -248,7 +217,7 @@ func (r *AntstorVolumeGroupReconciler) validateAndMutate(ctx *plugin.Context, vo
 
 // rollbackUnrecoverable rollback unrecoverable error of Volumes
 // unrecoverable error example: no enough free space, node failure, e.g.
-func (r *AntstorVolumeGroupReconciler) rollbackUnrecoverable(ctx *plugin.Context, volGroup *v1.AntstorVolumeGroup) (result plugin.Result) {
+func (r *AntstorVolumeGroupReconcileHandler) rollbackUnrecoverable(ctx *plugin.Context, volGroup *v1.AntstorVolumeGroup) (result plugin.Result) {
 	var (
 		log      = ctx.Log
 		err      error
@@ -269,7 +238,7 @@ func (r *AntstorVolumeGroupReconciler) rollbackUnrecoverable(ctx *plugin.Context
 			var volId = volGroup.Spec.Volumes[idx]
 			// delete volume
 			var vol v1.AntstorVolume
-			err = r.Client.Get(ctx.Ctx, client.ObjectKey{
+			err = r.Client.Get(ctx.ReqCtx.Ctx, client.ObjectKey{
 				Namespace: volId.VolId.Namespace,
 				Name:      volId.VolId.Name,
 			}, &vol)
@@ -279,7 +248,7 @@ func (r *AntstorVolumeGroupReconciler) rollbackUnrecoverable(ctx *plugin.Context
 				sinceCreation := time.Since(vol.CreationTimestamp.Time)
 				if sinceCreation > time.Minute {
 					log.Info("deleting volume", "vol", volId, "sinceCreation", sinceCreation)
-					err = r.Client.Delete(ctx.Ctx, &vol)
+					err = r.Client.Delete(ctx.ReqCtx.Ctx, &vol)
 					if err != nil {
 						log.Error(err, "delete volume failed", "vol", volId)
 					}
@@ -303,7 +272,7 @@ func (r *AntstorVolumeGroupReconciler) rollbackUnrecoverable(ctx *plugin.Context
 
 	// update volumegroup spec
 	if rollback {
-		err = r.Client.Update(ctx.Ctx, volGroup)
+		err = r.Client.Update(ctx.ReqCtx.Ctx, volGroup)
 		if err != nil {
 			return plugin.Result{Error: err}
 		}
@@ -313,7 +282,7 @@ func (r *AntstorVolumeGroupReconciler) rollbackUnrecoverable(ctx *plugin.Context
 	return plugin.Result{}
 }
 
-func (r *AntstorVolumeGroupReconciler) scheduleVolGroup(ctx *plugin.Context, volGroup *v1.AntstorVolumeGroup) (result plugin.Result) {
+func (r *AntstorVolumeGroupReconcileHandler) scheduleVolGroup(ctx *plugin.Context, volGroup *v1.AntstorVolumeGroup) (result plugin.Result) {
 	var (
 		err          error
 		log          = ctx.Log
@@ -332,7 +301,7 @@ func (r *AntstorVolumeGroupReconciler) scheduleVolGroup(ctx *plugin.Context, vol
 		// TODO: update status
 		log.Error(err, "sched volumegroup failed, retry in 1 min")
 		volGroup.Status.Message = err.Error()
-		updateErr := r.Status().Update(ctx.Ctx, volGroup)
+		updateErr := r.Status().Update(ctx.ReqCtx.Ctx, volGroup)
 		if updateErr != nil {
 			log.Error(updateErr, err.Error())
 		}
@@ -344,7 +313,7 @@ func (r *AntstorVolumeGroupReconciler) scheduleVolGroup(ctx *plugin.Context, vol
 		if !misc.InSliceString(v1.VolumesFinalizer, volGroup.Finalizers) {
 			volGroup.Finalizers = append(volGroup.Finalizers, v1.VolumesFinalizer)
 		}
-		err = r.Client.Update(ctx.Ctx, volGroup)
+		err = r.Client.Update(ctx.ReqCtx.Ctx, volGroup)
 		if err != nil {
 			log.Error(err, "update volumegroup failed")
 			return plugin.Result{Error: err}
@@ -355,9 +324,7 @@ func (r *AntstorVolumeGroupReconciler) scheduleVolGroup(ctx *plugin.Context, vol
 	return
 }
 
-/*
- */
-func (r *AntstorVolumeGroupReconciler) syncVolumes(ctx *plugin.Context, volGroup *v1.AntstorVolumeGroup) (result plugin.Result) {
+func (r *AntstorVolumeGroupReconcileHandler) syncVolumes(ctx *plugin.Context, volGroup *v1.AntstorVolumeGroup) (result plugin.Result) {
 	// vol group is not scheduled yet
 	if len(volGroup.Spec.Volumes) == 0 {
 		return plugin.Result{}
@@ -397,7 +364,7 @@ func (r *AntstorVolumeGroupReconciler) syncVolumes(ctx *plugin.Context, volGroup
 				// if vol is scheduled and vol is not found, create volume
 				if (item.Size > 0 && item.TargetNodeName != "") && errors.IsNotFound(err) {
 					newVol := newVolume(volGroup, item.VolId, item.Size, item.TargetNodeName)
-					errCreate := r.Client.Create(ctx.Ctx, newVol)
+					errCreate := r.Client.Create(ctx.ReqCtx.Ctx, newVol)
 					if errCreate == nil || errors.IsAlreadyExists(errCreate) {
 						log.Info("successfully created volume", "vol", item.VolId)
 					} else {
@@ -434,7 +401,7 @@ func (r *AntstorVolumeGroupReconciler) syncVolumes(ctx *plugin.Context, volGroup
 
 	// if status is changed, update status
 	if !reflect.DeepEqual(volGroup.Status, copyVolGroup.Status) {
-		err = r.Client.Status().Update(ctx.Ctx, volGroup)
+		err = r.Client.Status().Update(ctx.ReqCtx.Ctx, volGroup)
 		if err != nil {
 			log.Error(err, "update volumegroup status failed")
 			return plugin.Result{Error: err}
@@ -446,7 +413,7 @@ func (r *AntstorVolumeGroupReconciler) syncVolumes(ctx *plugin.Context, volGroup
 	return
 }
 
-func (r *AntstorVolumeGroupReconciler) waitVolumesReady(ctx *plugin.Context, volGroup *v1.AntstorVolumeGroup) (result plugin.Result) {
+func (r *AntstorVolumeGroupReconcileHandler) waitVolumesReady(ctx *plugin.Context, volGroup *v1.AntstorVolumeGroup) (result plugin.Result) {
 	var (
 		log            = ctx.Log
 		volNotAllReady bool

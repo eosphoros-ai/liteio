@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
+	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/config"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/scheduler/filter"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/state"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/util"
@@ -14,16 +15,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/klog/v2"
 )
-
-var (
-	ExtraPickSizeFnMap = make(map[string]GetAllocatableVolumeSizeFn)
-)
-
-type GetAllocatableVolumeSizeFn func(node *state.Node, volSize int64) (result int64)
-
-func RegisterVolumeGroupPickSizeFn(name string, fn GetAllocatableVolumeSizeFn) {
-	ExtraPickSizeFnMap[name] = fn
-}
 
 // ScheduleVolume return error if there is no StoragePool available
 func (s *scheduler) ScheduleVolumeGroup(allNodes []*state.Node, volGroup *v1.AntstorVolumeGroup) (err error) {
@@ -60,7 +51,7 @@ func (s *scheduler) ScheduleVolumeGroup(allNodes []*state.Node, volGroup *v1.Ant
 	// node usage < empty threashold, set score to 0, last of the list
 	sort.Sort(sort.Reverse(SortByStorage(qualified)))
 
-	err = schedVolGroup(qualified, volGroup)
+	err = schedVolGroup(s.cfg, qualified, volGroup)
 	if err != nil {
 		klog.Error(err)
 		return
@@ -71,7 +62,7 @@ func (s *scheduler) ScheduleVolumeGroup(allNodes []*state.Node, volGroup *v1.Ant
 	return
 }
 
-func schedVolGroup(nodes []*state.Node, volGroup *v1.AntstorVolumeGroup) (err error) {
+func schedVolGroup(cfg config.Config, nodes []*state.Node, volGroup *v1.AntstorVolumeGroup) (err error) {
 	var (
 		maxVolCnt            = volGroup.Spec.DesiredVolumeSpec.CountRange.Max
 		maxSize              = volGroup.Spec.DesiredVolumeSpec.SizeRange.Max
@@ -128,13 +119,10 @@ func schedVolGroup(nodes []*state.Node, volGroup *v1.AntstorVolumeGroup) (err er
 			for _, item := range nodes {
 				if !tgtNodeSet.Contains(item.Info.ID) {
 					result = pickSizeFn(item, leftSize)
-					for name, extraFn := range ExtraPickSizeFnMap {
-						result = extraFn(item, result)
-						klog.Info("pickSize Fn %s, picked size %d on node %s", name, result, item.Info.ID)
-						if result == 0 {
-							break
-						}
-					}
+					// calculate allocatable bytes by min local line
+					result = getAllocatableRemoteVolumeSize(item, result, float64(cfg.Scheduler.MinLocalStoragePct))
+					klog.Info("getAllocatableRemoteVolumeSize picked size %d on node %s", result, item.Info.ID)
+
 					// success
 					if result > 0 {
 						volGroup.Spec.Volumes[idx].Size = result
@@ -165,13 +153,10 @@ func schedVolGroup(nodes []*state.Node, volGroup *v1.AntstorVolumeGroup) (err er
 			for _, item := range nodes {
 				if !tgtNodeSet.Contains(item.Info.ID) {
 					result = pickSizeFn(item, leftSize)
-					for name, extraFn := range ExtraPickSizeFnMap {
-						result = extraFn(item, result)
-						klog.Info("pickSize Fn %s, picked size %d on node %s", name, result, item.Info.ID)
-						if result == 0 {
-							break
-						}
-					}
+					// calculate allocatable bytes by min local line
+					result = getAllocatableRemoteVolumeSize(item, result, float64(cfg.Scheduler.MinLocalStoragePct))
+					klog.Info("getAllocatableRemoteVolumeSize picked size %d on node %s", result, item.Info.ID)
+
 					// success
 					if result > 0 {
 						tgtNodeSet.Add(item.Info.ID)
@@ -277,4 +262,28 @@ func (p SortByStorage) Less(i, j int) bool {
 }
 func (p SortByStorage) Swap(i, j int) {
 	p[i], p[j] = p[j], p[i]
+}
+
+func getAllocatableRemoteVolumeSize(node *state.Node, volSize int64, minLocalStoragePct float64) (result int64) {
+	result = volSize
+	if result == 0 {
+		return
+	}
+	if node != nil {
+		allocRemotes := node.GetAllocatedRemoteBytes()
+		total := node.Pool.GetAvailableBytes()
+		// maxResultSize := int64(float64(total)*(100-minLocalStoragePct)*100) - int64(allocRemotes)
+		maxResultSize := total - int64(float64(total)*minLocalStoragePct/100) - int64(allocRemotes)
+		// cannot allocate remote volume
+		if maxResultSize < 0 {
+			return 0
+		}
+
+		if int64(maxResultSize) < result {
+			result = int64(maxResultSize)
+		}
+	}
+
+	result = result / util.FourMiB * util.FourMiB
+	return
 }

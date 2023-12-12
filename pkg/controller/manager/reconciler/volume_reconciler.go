@@ -16,8 +16,8 @@ import (
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/misc"
 	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -33,123 +33,112 @@ const (
 	EventReasonCreateSpdkFailure  = "CreateSpdkFailure"
 )
 
-type AntstorVolumeReconciler struct {
+type AntstorVolumeReconcileHandler struct {
 	client.Client
-	plugin.Plugable
 
 	KubeCli kubernetes.Interface
-	Log     logr.Logger
 	State   state.StateIface
 	// if Scheduler is nil, Reconciler will not schedule Volume
 	Scheduler   sched.SchedulerIface
 	AntstoreCli versioned.Interface
 	// EventRecorder
-	EventRecorder record.EventRecorder
+	// EventRecorder record.EventRecorder
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *AntstorVolumeReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	// setup indexer
-	// example code: https://github.com/kubernetes-sigs/kubebuilder/blob/master/docs/book/src/cronjob-tutorial/testdata/project/controllers/cronjob_controller.go#L548
-	mgr.GetFieldIndexer().IndexField(context.Background(), &v1.AntstorVolume{}, v1.IndexKeyUUID, func(rawObj client.Object) []string {
-		// grab the volume, extract the uuid
-		if vol, ok := rawObj.(*v1.AntstorVolume); ok {
-			return []string{vol.Spec.Uuid}
-		}
-		return nil
-	})
+func (rh *AntstorVolumeReconcileHandler) GetSetupWithManagerFn() SetupWithManagerFn {
+	return func(r reconcile.Reconciler, mgr ctrl.Manager) error {
+		// setup indexer
+		// example code: https://github.com/kubernetes-sigs/kubebuilder/blob/master/docs/book/src/cronjob-tutorial/testdata/project/controllers/cronjob_controller.go#L548
+		mgr.GetFieldIndexer().IndexField(context.Background(), &v1.AntstorVolume{}, v1.IndexKeyUUID, func(rawObj client.Object) []string {
+			// grab the volume, extract the uuid
+			if vol, ok := rawObj.(*v1.AntstorVolume); ok {
+				return []string{vol.Spec.Uuid}
+			}
+			return nil
+		})
 
-	mgr.GetFieldIndexer().IndexField(context.Background(), &v1.AntstorVolume{}, v1.IndexKeyTargetNodeID, func(rawObj client.Object) []string {
-		// grab the volume, extract the targetNodeId
-		if vol, ok := rawObj.(*v1.AntstorVolume); ok {
-			return []string{vol.Spec.TargetNodeId}
-		}
-		return nil
-	})
+		mgr.GetFieldIndexer().IndexField(context.Background(), &v1.AntstorVolume{}, v1.IndexKeyTargetNodeID, func(rawObj client.Object) []string {
+			// grab the volume, extract the targetNodeId
+			if vol, ok := rawObj.(*v1.AntstorVolume); ok {
+				return []string{vol.Spec.TargetNodeId}
+			}
+			return nil
+		})
 
-	return ctrl.NewControllerManagedBy(mgr).
-		WithOptions(controller.Options{
-			MaxConcurrentReconciles: 1,
-		}).
-		For(&v1.AntstorVolume{}).
-		Watches(&source.Kind{Type: &v1.AntstorVolume{}}, &handler.VolumeEventHandler{
-			State: r.State,
-		}).
-		Complete(r)
+		return ctrl.NewControllerManagedBy(mgr).
+			WithOptions(controller.Options{
+				MaxConcurrentReconciles: 1,
+			}).
+			For(&v1.AntstorVolume{}).
+			Watches(&source.Kind{Type: &v1.AntstorVolume{}}, &handler.VolumeEventHandler{
+				State: rh.State,
+			}).
+			Complete(r)
+	}
 }
 
-func (r *AntstorVolumeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	var (
-		log    = r.Log.WithValues("AntstorVolume", req.NamespacedName)
-		volume v1.AntstorVolume
-	)
+func (r *AntstorVolumeReconcileHandler) ResourceName() string {
+	return "AntstorVolume"
+}
 
-	// get volume
-	if err := r.Get(ctx, req.NamespacedName, &volume); err != nil {
-		// When user deleted a volume, a request will be recieved.
-		// However the volume does not exists. Therefore the code goes to here
-		log.Error(err, "unable to fetch Volume")
-		// we'll ignore not-found errors, since they can't be fixed by an immediate
-		// requeue (we'll need to wait for a new notification), and we can get them
-		// on deleted requests.
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+func (r *AntstorVolumeReconcileHandler) GetObject(req plugin.RequestContent) (obj runtime.Object, err error) {
+	var vol v1.AntstorVolume
+	err = r.Client.Get(req.Ctx, req.Request.NamespacedName, &vol)
+	return &vol, err
+}
+
+func (r *AntstorVolumeReconcileHandler) HandleDeletion(pCtx *plugin.Context) (result plugin.Result) {
+	result = r.handleDeletion(pCtx)
+	return
+}
+
+func (r *AntstorVolumeReconcileHandler) HandleReconcile(pCtx *plugin.Context) (result plugin.Result) {
+	var (
+		ctx    = pCtx.ReqCtx.Ctx
+		log    = pCtx.Log
+		volume *v1.AntstorVolume
+		ok     bool
+	)
+	if volume, ok = pCtx.ReqCtx.Object.(*v1.AntstorVolume); !ok {
+		result.Error = fmt.Errorf("object is not *v1.AntstorVolume, %#v", pCtx.ReqCtx.Object)
+		return
 	}
 
 	log.Info("Start handle Volume", "status", volume.Status)
-
 	// check if stop reconcling
 	if volume.Spec.StopReconcile {
-		return ctrl.Result{}, nil
-	}
-
-	var (
-		result plugin.Result
-		pCtx   = &plugin.Context{
-			Client:  r.Client,
-			KubeCli: r.KubeCli,
-			Ctx:     ctx,
-			Object:  &volume,
-			Request: req,
-			Log:     log,
-			State:   r.State,
-		}
-	)
-
-	// handle deletion request
-	if volume.DeletionTimestamp != nil {
-		// run plugins
-		for _, p := range r.Plugable.Plugins() {
-			p.HandleDeletion(pCtx)
-		}
-		result = r.handleDeletion(ctx, volume, log)
-		return result.Result, result.Error
+		return
 	}
 
 	// validate and mutate volume
 	result = r.validateAndMutate(ctx, volume, log)
 	if result.NeedBreak() {
-		return result.Result, result.Error
-	}
-
-	// run plugins
-	for _, p := range r.Plugable.Plugins() {
-		result = p.Reconcile(pCtx)
-		if result.NeedBreak() {
-			return result.Result, result.Error
-		}
+		return
 	}
 
 	// schedule volume
 	result = r.scheduleVolume(ctx, volume, log)
 	if result.NeedBreak() {
-		return result.Result, result.Error
+		return
 	}
 
-	return ctrl.Result{}, nil
+	return
 }
 
-func (r *AntstorVolumeReconciler) handleDeletion(ctx context.Context, volume v1.AntstorVolume, log logr.Logger) (result plugin.Result) {
-	var err error
+func (r *AntstorVolumeReconcileHandler) handleDeletion(pCtx *plugin.Context) (result plugin.Result) {
+	var (
+		err    error
+		ctx    = pCtx.ReqCtx.Ctx
+		log    = pCtx.Log
+		volume *v1.AntstorVolume
+		ok     bool
+	)
+	if volume, ok = pCtx.ReqCtx.Object.(*v1.AntstorVolume); !ok {
+		err = fmt.Errorf("object is not *v1.AntstorVolume, %#v", pCtx.ReqCtx.Object)
+		return
+	}
+
 	// 1. if there is only InStateFinalizer Finalizer left, unbind and delete volume
 	if len(volume.Finalizers) == 1 && misc.Contains(volume.Finalizers, v1.InStateFinalizer) {
 		// remove from state
@@ -161,7 +150,7 @@ func (r *AntstorVolumeReconciler) handleDeletion(ctx context.Context, volume v1.
 
 		// remove all Finalizers
 		volume.Finalizers = []string{}
-		err = r.Client.Update(ctx, &volume)
+		err = r.Client.Update(ctx, volume)
 		if err != nil {
 			log.Error(err, "remove Finalizers failed")
 		}
@@ -180,7 +169,7 @@ func (r *AntstorVolumeReconciler) handleDeletion(ctx context.Context, volume v1.
 	if targetPool == nil {
 		log.Info("cannot find pool in APIServer, remove volume Finalizers", "nodeid", volume.Spec.TargetNodeId, "UnbindAntstorVolume error", r.State.UnbindAntstorVolume(volume.Spec.Uuid))
 		volume.Finalizers = []string{}
-		err = r.Client.Update(ctx, &volume)
+		err = r.Client.Update(ctx, volume)
 		if err != nil {
 			log.Error(err, "remove Finalizers failed")
 		}
@@ -210,7 +199,7 @@ func (r *AntstorVolumeReconciler) handleDeletion(ctx context.Context, volume v1.
 		}
 
 		volume.Finalizers = finalizers
-		err = r.Client.Update(ctx, &volume)
+		err = r.Client.Update(ctx, volume)
 		if err != nil {
 			log.Error(err, "update volume Finalizer failed")
 		}
@@ -223,7 +212,7 @@ func (r *AntstorVolumeReconciler) handleDeletion(ctx context.Context, volume v1.
 	}
 }
 
-func (r *AntstorVolumeReconciler) validateAndMutate(ctx context.Context, volume v1.AntstorVolume, log logr.Logger) (result plugin.Result) {
+func (r *AntstorVolumeReconcileHandler) validateAndMutate(ctx context.Context, volume *v1.AntstorVolume, log logr.Logger) (result plugin.Result) {
 	if volume.Spec.Uuid == "" {
 		log.Error(nil, "volume uuid is empty, break reconcilinig")
 		return plugin.Result{
@@ -245,7 +234,7 @@ func (r *AntstorVolumeReconciler) validateAndMutate(ctx context.Context, volume 
 	if !foundUuidLabel && volume.Spec.Uuid != "" {
 		volume.Labels[v1.UuidLabelKey] = volume.Spec.Uuid
 		// after adding Label, start a new reconciling
-		err := r.Client.Patch(context.Background(), &volume, patch)
+		err := r.Client.Patch(context.Background(), volume, patch)
 		if err != nil {
 			log.Error(err, "add uuid label failed")
 			return plugin.Result{
@@ -260,7 +249,7 @@ func (r *AntstorVolumeReconciler) validateAndMutate(ctx context.Context, volume 
 
 	if volume.Status.Status == "" {
 		volume.Status.Status = v1.VolumeStatusCreating
-		err := r.Status().Update(ctx, &volume)
+		err := r.Status().Update(ctx, volume)
 		return plugin.Result{
 			Break: true,
 			Error: err,
@@ -271,7 +260,7 @@ func (r *AntstorVolumeReconciler) validateAndMutate(ctx context.Context, volume 
 	if val, has := volume.Annotations[v1.LvLayoutAnnoKey]; has {
 		if !misc.InSliceString(val, []string{"", string(v1.LVLayoutLinear), string(v1.LVLayoutStriped)}) {
 			volume.Status.Message = fmt.Sprintf("invalide value of Anno obnvmf/lv-layout=%s", val)
-			err := r.Client.Status().Update(context.Background(), &volume)
+			err := r.Client.Status().Update(context.Background(), volume)
 			if err != nil {
 				log.Error(err, "update status message failed")
 				return plugin.Result{
@@ -291,7 +280,7 @@ func (r *AntstorVolumeReconciler) validateAndMutate(ctx context.Context, volume 
 		// volume was scheduled to TargetNodeId, check if Pool is in state
 		// BindAntstorVolume one volume twice will not return error
 		log.Info("bind volume to node", "nodeId", volume.Spec.TargetNodeId)
-		err = stateObj.BindAntstorVolume(volume.Spec.TargetNodeId, &volume)
+		err = stateObj.BindAntstorVolume(volume.Spec.TargetNodeId, volume)
 		if err != nil {
 			log.Error(err, "binding volume failed")
 			return plugin.Result{
@@ -320,7 +309,7 @@ func (r *AntstorVolumeReconciler) validateAndMutate(ctx context.Context, volume 
 
 		// update Volume
 		if updated {
-			err = r.Client.Patch(context.Background(), &volume, patch)
+			err = r.Client.Patch(context.Background(), volume, patch)
 			if err != nil {
 				log.Error(err, "patch volume failed")
 				return plugin.Result{
@@ -333,7 +322,7 @@ func (r *AntstorVolumeReconciler) validateAndMutate(ctx context.Context, volume 
 	return plugin.Result{}
 }
 
-func (r *AntstorVolumeReconciler) scheduleVolume(ctx context.Context, volume v1.AntstorVolume, log logr.Logger) (result plugin.Result) {
+func (r *AntstorVolumeReconcileHandler) scheduleVolume(ctx context.Context, volume *v1.AntstorVolume, log logr.Logger) (result plugin.Result) {
 	var (
 		scheduler = r.Scheduler
 		stateObj  = r.State
@@ -352,7 +341,7 @@ func (r *AntstorVolumeReconciler) scheduleVolume(ctx context.Context, volume v1.
 		if err == nil && boundVol != nil && boundVol.Spec.TargetNodeId != "" {
 			log.Info("volume is already scheduled and bind to node", "nodeId", boundVol.Spec.TargetNodeId)
 			volume.Spec.TargetNodeId = boundVol.Spec.TargetNodeId
-			err = r.Client.Update(ctx, &volume)
+			err = r.Client.Update(ctx, volume)
 			if err != nil {
 				log.Error(err, "persist binding of volume failed")
 				return plugin.Result{Error: err}
@@ -364,12 +353,12 @@ func (r *AntstorVolumeReconciler) scheduleVolume(ctx context.Context, volume v1.
 		}
 
 		// do scehdule
-		nodeInfo, err = scheduler.ScheduleVolume(stateObj.GetAllNodes(), &volume)
+		nodeInfo, err = scheduler.ScheduleVolume(stateObj.GetAllNodes(), volume)
 		if filter.IsNoStoragePoolAvailable(err) {
 			if !strings.Contains(volume.Status.Message, filter.NoStoragePoolAvailable) {
 				volume.Status.Message = err.Error()
 				volume.Status.Status = v1.VolumeStatusCreating
-				errUpdate := r.Client.Status().Update(ctx, &volume)
+				errUpdate := r.Client.Status().Update(ctx, volume)
 				if errUpdate != nil {
 					log.Error(errUpdate, "update volume status failed")
 				}
@@ -393,7 +382,7 @@ func (r *AntstorVolumeReconciler) scheduleVolume(ctx context.Context, volume v1.
 
 		// save binding to state
 		log.Info("volume is scheduled to node", "nodeId", nodeInfo.ID)
-		err = stateObj.BindAntstorVolume(nodeInfo.ID, &volume)
+		err = stateObj.BindAntstorVolume(nodeInfo.ID, volume)
 		if err != nil {
 			log.Error(err, "bind volume to node failed", "nodeID", nodeInfo.ID)
 			return plugin.Result{Error: err}
@@ -407,7 +396,7 @@ func (r *AntstorVolumeReconciler) scheduleVolume(ctx context.Context, volume v1.
 		volume.Spec.TargetNodeId = nodeInfo.ID
 		volume.Labels[v1.TargetNodeIdLabelKey] = volume.Spec.TargetNodeId
 		volume.Status.Status = v1.VolumeStatusCreating
-		err = r.Client.Patch(ctx, &volume, patch)
+		err = r.Client.Patch(ctx, volume, patch)
 		if err != nil {
 			log.Error(err, "patching volume failed")
 			return plugin.Result{Error: err}

@@ -14,6 +14,7 @@ var (
 func init() {
 	RegisterFilter("Basic", BasicFilterFunc)
 	RegisterFilter("Affinity", AffinityFilterFunc)
+	RegisterFilter("MinLocalStorage", MinLocalStorageFilterFunc)
 }
 
 func RegisterFilter(name string, filter PredicateFunc) {
