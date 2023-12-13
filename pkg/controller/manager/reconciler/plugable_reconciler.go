@@ -14,7 +14,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	crhandler "sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/reconciler/plugin"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/state"
@@ -39,6 +41,11 @@ type SetupWithManagerProvider interface {
 
 type SetupWithManagerFn func(r reconcile.Reconciler, mgr ctrl.Manager) error
 
+type WatchObject struct {
+	Source       source.Source
+	EventHandler crhandler.EventHandler
+}
+
 type PlugableReconciler struct {
 	client.Client
 	plugin.Plugable
@@ -48,7 +55,8 @@ type PlugableReconciler struct {
 	Log     logr.Logger
 
 	Concurrency int
-	WatchType   client.Object
+	ForType     client.Object
+	Watches     []WatchObject
 	MainHandler ReconcileHandler
 
 	Lock misc.ResourceLockIface
@@ -68,16 +76,21 @@ func (r *PlugableReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		r.Lock = misc.NewResourceLocks()
 	}
 
-	if r.WatchType == nil {
-		return fmt.Errorf("WatchType is nil")
+	if r.ForType == nil {
+		return fmt.Errorf("ForType is nil")
 	}
 
-	return ctrl.NewControllerManagedBy(mgr).
+	bld := ctrl.NewControllerManagedBy(mgr).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: r.Concurrency,
 		}).
-		For(r.WatchType).
-		Complete(r)
+		For(r.ForType)
+
+	for _, item := range r.Watches {
+		bld = bld.Watches(item.Source, item.EventHandler)
+	}
+
+	return bld.Complete(r)
 }
 
 func (r *PlugableReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {

@@ -5,16 +5,7 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
-
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/kubeutil"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/config"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/reconciler"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/reconciler/plugin"
-	sched "code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/scheduler"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/state"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/generated/clientset/versioned"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/misc"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -24,6 +15,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
+	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/kubeutil"
+	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/config"
+	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/reconciler"
+	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/reconciler/handler"
+	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/reconciler/plugin"
+	sched "code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/scheduler"
+	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/state"
+	"code.alipay.com/dbplatform/node-disk-controller/pkg/generated/clientset/versioned"
+	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/misc"
 )
 
 type B64EncodedMysqlDSN string
@@ -100,7 +103,15 @@ func NewAndInitControllerManager(req NewManagerRequest) manager.Manager {
 			PoolUtil: poolUtil,
 			KubeCli:  kubeClient,
 		},
-		WatchType: &v1.StoragePool{},
+		ForType: &v1.StoragePool{},
+		Watches: []reconciler.WatchObject{
+			{
+				Source: &source.Kind{Type: &corev1.Node{}},
+				EventHandler: &handler.NodeEventHandler{
+					Cfg: req.ControllerConfig,
+				},
+			},
+		},
 	}
 	if err = poolReconciler.SetupWithManager(mgr); err != nil {
 		klog.Error(err, "unable to create controller StoragePoolReconciler")
@@ -123,7 +134,7 @@ func NewAndInitControllerManager(req NewManagerRequest) manager.Manager {
 			AntstoreCli: antstorCli,
 			Scheduler:   scheduler,
 		},
-		WatchType: &v1.AntstorVolume{},
+		ForType: &v1.AntstorVolume{},
 	}
 	if err = volReconciler.SetupWithManager(mgr); err != nil {
 		klog.Error(err, "unable to create controller VolumeReconciler")
@@ -145,7 +156,7 @@ func NewAndInitControllerManager(req NewManagerRequest) manager.Manager {
 			Scheduler: scheduler,
 			State:     stateObj,
 		},
-		WatchType: &v1.AntstorVolumeGroup{},
+		ForType: &v1.AntstorVolumeGroup{},
 	}
 	if err = volGroupReconciler.SetupWithManager(mgr); err != nil {
 		klog.Error(err, "unable to create controller VolumeGroupReconciler")
@@ -165,7 +176,7 @@ func NewAndInitControllerManager(req NewManagerRequest) manager.Manager {
 		MainHandler: &reconciler.AntstorDataControlReconcileHandler{
 			Client: mgr.GetClient(),
 		},
-		WatchType: &v1.AntstorDataControl{},
+		ForType: &v1.AntstorDataControl{},
 	}
 	if err = dataControlReconciler.SetupWithManager(mgr); err != nil {
 		klog.Error(err, "unable to create controller AntstorDataControlReconciler")
