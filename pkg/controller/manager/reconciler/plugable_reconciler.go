@@ -36,15 +36,15 @@ type ReconcileHandler interface {
 	HandleDeletion(*plugin.Context) plugin.Result
 }
 
-type SetupWithManagerProvider interface {
-	GetSetupWithManagerFn() SetupWithManagerFn
-}
-
-type SetupWithManagerFn func(r reconcile.Reconciler, mgr ctrl.Manager) error
-
 type WatchObject struct {
 	Source       source.Source
 	EventHandler crhandler.EventHandler
+}
+
+type IndexObject struct {
+	Obj          client.Object
+	Field        string
+	ExtractValue client.IndexerFunc
 }
 
 type PlugableReconciler struct {
@@ -59,6 +59,7 @@ type PlugableReconciler struct {
 	Concurrency int
 	ForType     client.Object
 	Watches     []WatchObject
+	Indexes     []IndexObject
 	MainHandler ReconcileHandler
 
 	Lock misc.ResourceLockIface
@@ -66,11 +67,6 @@ type PlugableReconciler struct {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *PlugableReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	if setupProvider, ok := r.MainHandler.(SetupWithManagerProvider); ok {
-		fn := setupProvider.GetSetupWithManagerFn()
-		return fn(r, mgr)
-	}
-
 	if r.Concurrency <= 0 {
 		r.Concurrency = 1
 	}
@@ -90,6 +86,12 @@ func (r *PlugableReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	for _, item := range r.Watches {
 		bld = bld.Watches(item.Source, item.EventHandler)
+	}
+
+	// setup indexer
+	// example code: https://github.com/kubernetes-sigs/kubebuilder/blob/master/docs/book/src/cronjob-tutorial/testdata/project/controllers/cronjob_controller.go#L548
+	for _, item := range r.Indexes {
+		mgr.GetFieldIndexer().IndexField(context.Background(), item.Obj, item.Field, item.ExtractValue)
 	}
 
 	return bld.Complete(r)

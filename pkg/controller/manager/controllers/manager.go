@@ -12,6 +12,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 	rt "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -135,6 +136,37 @@ func NewAndInitControllerManager(req NewManagerRequest) manager.Manager {
 			Scheduler:   scheduler,
 		},
 		ForType: &v1.AntstorVolume{},
+		Watches: []reconciler.WatchObject{
+			{
+				Source: &source.Kind{Type: &v1.AntstorVolume{}},
+				EventHandler: &handler.VolumeEventHandler{
+					State: stateObj,
+				}},
+		},
+		Indexes: []reconciler.IndexObject{
+			{
+				Obj:   &v1.AntstorVolume{},
+				Field: v1.IndexKeyUUID,
+				ExtractValue: func(rawObj client.Object) []string {
+					// grab the volume, extract the uuid
+					if vol, ok := rawObj.(*v1.AntstorVolume); ok {
+						return []string{vol.Spec.Uuid}
+					}
+					return nil
+				},
+			},
+			{
+				Obj:   &v1.AntstorVolume{},
+				Field: v1.IndexKeyTargetNodeID,
+				ExtractValue: func(rawObj client.Object) []string {
+					// grab the volume, extract the targetNodeId
+					if vol, ok := rawObj.(*v1.AntstorVolume); ok {
+						return []string{vol.Spec.TargetNodeId}
+					}
+					return nil
+				},
+			},
+		},
 	}
 	if err = volReconciler.SetupWithManager(mgr); err != nil {
 		klog.Error(err, "unable to create controller VolumeReconciler")
