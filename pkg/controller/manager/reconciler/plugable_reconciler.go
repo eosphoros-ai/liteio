@@ -14,8 +14,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	crhandler "sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/config"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/reconciler/plugin"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/state"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/misc"
@@ -33,22 +36,30 @@ type ReconcileHandler interface {
 	HandleDeletion(*plugin.Context) plugin.Result
 }
 
-type SetupWithManagerProvider interface {
-	GetSetupWithManagerFn() SetupWithManagerFn
+type WatchObject struct {
+	Source       source.Source
+	EventHandler crhandler.EventHandler
 }
 
-type SetupWithManagerFn func(r reconcile.Reconciler, mgr ctrl.Manager) error
+type IndexObject struct {
+	Obj          client.Object
+	Field        string
+	ExtractValue client.IndexerFunc
+}
 
 type PlugableReconciler struct {
 	client.Client
 	plugin.Plugable
 
+	Cfg     config.Config
 	KubeCli kubernetes.Interface
 	State   state.StateIface
 	Log     logr.Logger
 
 	Concurrency int
-	WatchType   client.Object
+	ForType     client.Object
+	Watches     []WatchObject
+	Indexes     []IndexObject
 	MainHandler ReconcileHandler
 
 	Lock misc.ResourceLockIface
@@ -56,11 +67,6 @@ type PlugableReconciler struct {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *PlugableReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	if setupProvider, ok := r.MainHandler.(SetupWithManagerProvider); ok {
-		fn := setupProvider.GetSetupWithManagerFn()
-		return fn(r, mgr)
-	}
-
 	if r.Concurrency <= 0 {
 		r.Concurrency = 1
 	}
@@ -68,16 +74,27 @@ func (r *PlugableReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		r.Lock = misc.NewResourceLocks()
 	}
 
-	if r.WatchType == nil {
-		return fmt.Errorf("WatchType is nil")
+	if r.ForType == nil {
+		return fmt.Errorf("ForType is nil")
 	}
 
-	return ctrl.NewControllerManagedBy(mgr).
+	bld := ctrl.NewControllerManagedBy(mgr).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: r.Concurrency,
 		}).
-		For(r.WatchType).
-		Complete(r)
+		For(r.ForType)
+
+	for _, item := range r.Watches {
+		bld = bld.Watches(item.Source, item.EventHandler)
+	}
+
+	// setup indexer
+	// example code: https://github.com/kubernetes-sigs/kubebuilder/blob/master/docs/book/src/cronjob-tutorial/testdata/project/controllers/cronjob_controller.go#L548
+	for _, item := range r.Indexes {
+		mgr.GetFieldIndexer().IndexField(context.Background(), item.Obj, item.Field, item.ExtractValue)
+	}
+
+	return bld.Complete(r)
 }
 
 func (r *PlugableReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {

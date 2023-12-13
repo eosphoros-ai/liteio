@@ -7,7 +7,6 @@ import (
 	"time"
 
 	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/reconciler/handler"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/reconciler/plugin"
 	sched "code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/scheduler"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/scheduler/filter"
@@ -20,9 +19,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -43,39 +40,6 @@ type AntstorVolumeReconcileHandler struct {
 	AntstoreCli versioned.Interface
 	// EventRecorder
 	// EventRecorder record.EventRecorder
-}
-
-// SetupWithManager sets up the controller with the Manager.
-func (rh *AntstorVolumeReconcileHandler) GetSetupWithManagerFn() SetupWithManagerFn {
-	return func(r reconcile.Reconciler, mgr ctrl.Manager) error {
-		// setup indexer
-		// example code: https://github.com/kubernetes-sigs/kubebuilder/blob/master/docs/book/src/cronjob-tutorial/testdata/project/controllers/cronjob_controller.go#L548
-		mgr.GetFieldIndexer().IndexField(context.Background(), &v1.AntstorVolume{}, v1.IndexKeyUUID, func(rawObj client.Object) []string {
-			// grab the volume, extract the uuid
-			if vol, ok := rawObj.(*v1.AntstorVolume); ok {
-				return []string{vol.Spec.Uuid}
-			}
-			return nil
-		})
-
-		mgr.GetFieldIndexer().IndexField(context.Background(), &v1.AntstorVolume{}, v1.IndexKeyTargetNodeID, func(rawObj client.Object) []string {
-			// grab the volume, extract the targetNodeId
-			if vol, ok := rawObj.(*v1.AntstorVolume); ok {
-				return []string{vol.Spec.TargetNodeId}
-			}
-			return nil
-		})
-
-		return ctrl.NewControllerManagedBy(mgr).
-			WithOptions(controller.Options{
-				MaxConcurrentReconciles: 1,
-			}).
-			For(&v1.AntstorVolume{}).
-			Watches(&source.Kind{Type: &v1.AntstorVolume{}}, &handler.VolumeEventHandler{
-				State: rh.State,
-			}).
-			Complete(r)
-	}
 }
 
 func (r *AntstorVolumeReconcileHandler) ResourceName() string {
