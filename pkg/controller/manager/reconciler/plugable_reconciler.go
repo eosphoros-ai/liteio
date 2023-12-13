@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,7 +16,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/config"
+	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/reconciler/handler"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/reconciler/plugin"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/state"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/misc"
@@ -43,6 +47,7 @@ type PlugableReconciler struct {
 	client.Client
 	plugin.Plugable
 
+	Cfg     config.Config
 	KubeCli kubernetes.Interface
 	State   state.StateIface
 	Log     logr.Logger
@@ -77,6 +82,10 @@ func (r *PlugableReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			MaxConcurrentReconciles: r.Concurrency,
 		}).
 		For(r.WatchType).
+		// watch node
+		Watches(&source.Kind{Type: &corev1.Node{}}, &handler.NodeEventHandler{
+			Cfg: r.Cfg,
+		}).
 		Complete(r)
 }
 

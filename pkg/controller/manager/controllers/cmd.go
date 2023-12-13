@@ -9,7 +9,6 @@ import (
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/agent"
 	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/config"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/reconciler/handler"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/state"
 	hostnvme "code.alipay.com/dbplatform/node-disk-controller/pkg/host-nvme"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/util"
@@ -17,11 +16,9 @@ import (
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/version"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	cligoscheme "k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/tools/cache"
 	"k8s.io/klog/v2"
 	rt "sigs.k8s.io/controller-runtime"
 )
@@ -173,18 +170,21 @@ func (o *OperatorOption) Run() {
 
 	ctx := rt.SetupSignalHandler()
 
-	// create NodeInformer to sync nodes to cache
-	nodeInformer, err := mgr.GetCache().GetInformer(ctx, &corev1.Node{})
-	if err != nil {
-		klog.Fatal(err)
-	}
-	nodeHandler := &handler.NodeEventHandler{
-		Cfg: cfg,
-	}
-	nodeInformer.AddEventHandler(cache.FilteringResourceEventHandler{
-		FilterFunc: nodeHandler.FilterObject,
-		Handler:    nodeHandler,
-	})
+	/*
+		// create NodeInformer to sync nodes to cache
+		// moved to pool reconciler
+		nodeInformer, err := mgr.GetCache().GetInformer(ctx, &corev1.Node{})
+		if err != nil {
+			klog.Fatal(err)
+		}
+		nodeHandler := &handler.NodeEventHandler{
+			Cfg: cfg,
+		}
+		nodeInformer.AddEventHandler(cache.FilteringResourceEventHandler{
+			FilterFunc: nodeHandler.FilterObject,
+			Handler:    nodeHandler,
+		})
+	*/
 
 	go func() {
 		klog.Info("manager start working")
