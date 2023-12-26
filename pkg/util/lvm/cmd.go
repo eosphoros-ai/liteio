@@ -18,7 +18,7 @@ const (
 	LvDeviceOpen    = "open"
 	LvDeviceNotOpen = ""
 
-	pvLostErrStr = "not found or rejected by a filter"
+	pvLostErrStr = "Couldn't find device"
 )
 
 var (
