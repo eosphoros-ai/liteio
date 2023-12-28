@@ -18,6 +18,8 @@ type NodeStateAPI struct {
 	FreeSize int64 `json:"freeSize"`
 	// Conditions of the pool status
 	Conditions map[v1.PoolConditionType]v1.ConditionStatus `json:"conditions"`
+	// Resvervations on the node
+	Resvervations []ReservationBreif `json:"reservations"`
 }
 
 type VolumeBrief struct {
@@ -28,7 +30,8 @@ type VolumeBrief struct {
 }
 
 type ReservationBreif struct {
-	ID string `json:"id"`
+	ID   string `json:"id"`
+	Size int64  `json:"size"`
 }
 
 func NewStateHandler(s StateIface) *StateHandler {
@@ -72,6 +75,15 @@ func (h *StateHandler) ServeHTTP(writer http.ResponseWriter, req *http.Request) 
 			Size:       int64(vol.Spec.SizeByte),
 			DataHolder: vol.Labels[v1.VolumeDataHolderKey],
 		})
+	}
+
+	if node.resvSet != nil {
+		for _, resv := range node.resvSet.Items() {
+			api.Resvervations = append(api.Resvervations, ReservationBreif{
+				ID:   resv.ID(),
+				Size: resv.Size(),
+			})
+		}
 	}
 
 	bs, err := json.Marshal(api)
