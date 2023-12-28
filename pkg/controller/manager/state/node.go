@@ -63,6 +63,7 @@ func (n *Node) AddVolume(vol *v1.AntstorVolume) (err error) {
 	defer n.volLock.Unlock()
 
 	var nodeID = n.Info.ID
+	var duplicate bool
 
 	// delete reservation if volume has reservation id
 	if resvID := getVolumeReservationID(vol); resvID != "" {
@@ -83,13 +84,15 @@ func (n *Node) AddVolume(vol *v1.AntstorVolume) (err error) {
 			// save the newer volume
 			*item = *vol.DeepCopy()
 			klog.Infof("vol %s already in node %s. type and sizes equal to each other", vol.Name, nodeID)
-			return
+			duplicate = true
 		}
 	}
 
-	n.Volumes = append(n.Volumes, vol)
-	// volume reside on Node
-	vol.Spec.TargetNodeId = n.Pool.Spec.NodeInfo.ID
+	if !duplicate {
+		// volume reside on Node
+		vol.Spec.TargetNodeId = n.Pool.Spec.NodeInfo.ID
+		n.Volumes = append(n.Volumes, vol)
+	}
 
 	// update free resource
 	n.FreeResource = n.GetFreeResourceNonLock()
