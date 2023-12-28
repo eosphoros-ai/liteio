@@ -112,3 +112,38 @@ func TestMinusResource(t *testing.T) {
 
 	t.Log(q.AsInt64())
 }
+
+func TestReservation(t *testing.T) {
+	pool := v1.StoragePool{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: v1.DefaultNamespace,
+			Name:      "node1",
+			Labels:    map[string]string{},
+		},
+		Spec: v1.StoragePoolSpec{
+			NodeInfo: v1.NodeInfo{
+				ID: "node1",
+			},
+			KernelLVM: v1.KernelLVM{
+				Bytes: 38654705664, // 36864 MiB
+				ReservedLVol: []v1.KernelLVol{
+					{
+						Name:     "reserved-lv",
+						SizeByte: 1024 * 1024 * 100, // 100MiB
+					},
+				},
+			},
+		},
+		Status: v1.StoragePoolStatus{
+			Capacity: corev1.ResourceList{
+				v1.ResourceDiskPoolByte: resource.MustParse("36864Mi"),
+			},
+		},
+	}
+	node := NewNode(&pool)
+
+	node.Reserve(NewReservation("resv-id", 1024*1024*100))
+
+	t.Log(node.FreeResource.Storage().String())
+
+}

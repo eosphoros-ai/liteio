@@ -14,8 +14,12 @@ type NodeStateAPI struct {
 	SpdkLVS    *v1.SpdkLVStore   `json:"spdkLVS,omitempty"`
 	// Volumes breif info
 	Volumes []VolumeBrief `json:"volumes"`
-	// FreeSize of the pool
-	FreeSize int64 `json:"freeSize"`
+	// VgFreeSize of the pool
+	VgFreeSize int64 `json:"vgFreeSize"`
+	// MemFreeSize in controller memory
+	MemFreeSize int64 `json:"memFreeSize"`
+	// MemFreeSizeStr readable size in controller memory
+	MemFreeSizeStr string `json:"memFreeSizeStr"`
 	// Conditions of the pool status
 	Conditions map[v1.PoolConditionType]v1.ConditionStatus `json:"conditions"`
 	// Resvervations on the node
@@ -56,11 +60,14 @@ func (h *StateHandler) ServeHTTP(writer http.ResponseWriter, req *http.Request) 
 	}
 
 	var api = NodeStateAPI{
-		Name:       spName,
-		PoolLabels: node.Pool.Labels,
-		KernelLVM:  &node.Pool.Spec.KernelLVM,
-		SpdkLVS:    &node.Pool.Spec.SpdkLVStore,
-		FreeSize:   node.Pool.Status.VGFreeSize.Value(),
+		Name:           spName,
+		PoolLabels:     node.Pool.Labels,
+		KernelLVM:      &node.Pool.Spec.KernelLVM,
+		SpdkLVS:        &node.Pool.Spec.SpdkLVStore,
+		VgFreeSize:     node.Pool.Status.VGFreeSize.Value(),
+		MemFreeSize:    int64(node.FreeResource.Storage().AsApproximateFloat64()),
+		MemFreeSizeStr: node.FreeResource.Storage().String(),
+
 		Conditions: make(map[v1.PoolConditionType]v1.ConditionStatus),
 	}
 
