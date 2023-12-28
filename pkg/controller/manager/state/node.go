@@ -231,6 +231,25 @@ func (n *Node) GetFreeResourceNonLock() (free corev1.ResourceList) {
 
 // Reserve storage resource for Node
 func (n *Node) Reserve(r ReservationIface) {
+	// if volume is already binded, then skip reservation.
+	var resvID = r.ID()
+	for _, vol := range n.Volumes {
+		if resvID == getVolumeReservationID(vol) {
+			return
+		}
+	}
+
+	// check free resource
+	if free := n.FreeResource.Storage(); free != nil {
+		if free.CmpInt64(r.Size()) < 0 {
+			klog.Errorf("node %s have no enough disk pool space for reservation %s", n.Info.ID, resvID)
+			return
+		}
+	}
+
+	n.volLock.Lock()
+	defer n.volLock.Unlock()
+
 	n.resvSet.Reserve(r)
 	// update free resource
 	n.FreeResource = n.GetFreeResourceNonLock()
@@ -238,7 +257,14 @@ func (n *Node) Reserve(r ReservationIface) {
 
 // Unreserve storage resource
 func (n *Node) Unreserve(id string) {
+	n.volLock.Lock()
+	defer n.volLock.Unlock()
+
 	n.resvSet.Unreserve(id)
 	// update free resource
 	n.FreeResource = n.GetFreeResourceNonLock()
+}
+
+func (n *Node) GetReservation(id string) (r ReservationIface, has bool) {
+	return n.resvSet.GetById(id)
 }
