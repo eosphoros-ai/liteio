@@ -264,3 +264,7 @@ func (n *Node) Unreserve(id string) {
 	// update free resource
 	n.FreeResource = n.GetFreeResourceNonLock()
 }
+
+func (n *Node) GetReservation(id string) (r ReservationIface, has bool) {
+	return n.resvSet.GetById(id)
+}

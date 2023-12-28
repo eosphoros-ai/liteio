@@ -102,3 +102,13 @@ func TestCompareError(t *testing.T) {
 	err := newNotFoundNodeError("test")
 	assert.True(t, IsNotFoundNodeError(err))
 }
+
+func TestMinusResource(t *testing.T) {
+	q := resource.NewQuantity(0, resource.BinarySI)
+	assert.Zero(t, q.CmpInt64(0))
+
+	q.Sub(resource.MustParse("1Mi"))
+	assert.True(t, q.CmpInt64(0) == -1)
+
+	t.Log(q.AsInt64())
+}

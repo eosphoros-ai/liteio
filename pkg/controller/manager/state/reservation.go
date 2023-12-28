@@ -13,6 +13,7 @@ type ReservationSetIface interface {
 	Reserve(r ReservationIface)
 	Unreserve(id string)
 	Items() (list []ReservationIface)
+	GetById(id string) (r ReservationIface, has bool)
 }
 
 type ReservationIface interface {
@@ -57,10 +58,30 @@ func (rs *reservationSet) Items() (list []ReservationIface) {
 	return list
 }
 
+func (rs *reservationSet) GetById(id string) (r ReservationIface, has bool) {
+	rs.lock.Lock()
+	defer rs.lock.Unlock()
+
+	for _, item := range rs.rMap {
+		if item.ID() == id {
+			return item, true
+		}
+	}
+
+	return nil, false
+}
+
 type reservation struct {
 	id             string
 	namespacedName string
 	sizeByte       int64
+}
+
+func NewReservation(id string, size int64) ReservationIface {
+	return &reservation{
+		id:       id,
+		sizeByte: size,
+	}
 }
 
 func NewPvcReservation(pvc *corev1.PersistentVolumeClaim) ReservationIface {
