@@ -100,6 +100,7 @@ func NewAndInitControllerManager(req NewManagerRequest) manager.Manager {
 		Concurrency: 4,
 		MainHandler: &reconciler.StoragePoolReconcileHandler{
 			Client:   mgr.GetClient(),
+			Cfg:      req.ControllerConfig,
 			State:    stateObj,
 			PoolUtil: poolUtil,
 			KubeCli:  kubeClient,
