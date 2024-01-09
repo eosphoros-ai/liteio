@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"strconv"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/kubeutil"
@@ -41,6 +43,7 @@ func NewReportLocalStoragePlugin(h *controllers.PluginHandle) (p plugin.Plugin, 
 	}
 
 	p = &ReportLocalStoragePlugin{
+		Client:             h.Client,
 		NodeUpdater:        kubeutil.NewKubeNodeInfoGetter(h.Req.KubeCli),
 		PoolUtil:           kubeutil.NewStoragePoolUtil(h.Client),
 		ReportLocalConfigs: pluginCfg.DefaultLocalSpaceRules,
@@ -50,7 +53,7 @@ func NewReportLocalStoragePlugin(h *controllers.PluginHandle) (p plugin.Plugin, 
 
 // ReportLocalStoragePlugin is a AntstorVolume plugin.
 type ReportLocalStoragePlugin struct {
-	// NodeGetter  kubeutil.NodeInfoGetterIface
+	Client      client.Client
 	NodeUpdater kubeutil.NodeUpdaterIface
 	PoolUtil    kubeutil.StoragePoolUpdater
 
@@ -96,10 +99,27 @@ func (r *ReportLocalStoragePlugin) Reconcile(ctx *plugin.Context) (result plugin
 
 	// report the local storage when the StoragePool is created in the first place.
 	if isPool && pool != nil {
-		totalBs := pool.GetAvailableBytes()
-		if _, has := pool.Labels[v1.PoolLocalStorageBytesKey]; !has {
+		var (
+			totalBs      int64
+			node         corev1.Node
+			hasNodeRes   bool
+			hasPoolLabel bool
+		)
+
+		totalBs = pool.GetAvailableBytes()
+		err = r.Client.Get(ctx.ReqCtx.Ctx, client.ObjectKey{Name: pool.Name}, &node)
+		if err != nil {
+			log.Error(err, "getting Node failed")
+			return plugin.Result{Error: err}
+		}
+
+		_, hasNodeRes = node.Status.Allocatable[kubeutil.SdsLocalStorageResourceKey]
+		_, hasPoolLabel = pool.Labels[v1.PoolLocalStorageBytesKey]
+		log.Info("check pool PoolLocalStorageBytesKey and node SdsLocalStorageResourceKey", "nodeResource", hasNodeRes, "hasPoolLabel", hasPoolLabel)
+
+		if !hasPoolLabel || !hasNodeRes {
 			log.Info("update node/status capacity", "local-storage", totalBs)
-			// update Pool Label "obnvmf/node-local-storage-size" = totalBs
+			// update Pool Label "obnvmf/local-storage-bytes" = totalBs
 			err = r.PoolUtil.SavePoolLocalStorageMark(pool, uint64(totalBs))
 			if err != nil {
 				log.Error(err, "SavePoolLocalStorageMark failed")
