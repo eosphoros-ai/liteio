@@ -100,13 +100,22 @@ func (r *ReportLocalStoragePlugin) Reconcile(ctx *plugin.Context) (result plugin
 	// report the local storage when the StoragePool is created in the first place.
 	if isPool && pool != nil {
 		var (
-			totalBs      int64
+			localBS      uint64
 			node         corev1.Node
+			snode        *state.Node
 			hasNodeRes   bool
 			hasPoolLabel bool
 		)
 
-		totalBs = pool.GetAvailableBytes()
+		// calculate local storage
+		snode, err = stateObj.GetNodeByNodeID(pool.Name)
+		if err != nil {
+			log.Error(err, "find node failed")
+			return plugin.Result{Error: err}
+		}
+		localBS = CalculateLocalStorageCapacity(snode)
+
+		// get node
 		err = r.Client.Get(ctx.ReqCtx.Ctx, client.ObjectKey{Name: pool.Name}, &node)
 		if err != nil {
 			log.Error(err, "getting Node failed")
@@ -118,16 +127,16 @@ func (r *ReportLocalStoragePlugin) Reconcile(ctx *plugin.Context) (result plugin
 		log.Info("check pool PoolLocalStorageBytesKey and node SdsLocalStorageResourceKey", "nodeResource", hasNodeRes, "hasPoolLabel", hasPoolLabel)
 
 		if !hasPoolLabel || !hasNodeRes {
-			log.Info("update node/status capacity", "local-storage", totalBs)
+			log.Info("update node/status capacity", "local-storage", localBS)
 			// update Pool Label "obnvmf/local-storage-bytes" = totalBs
-			err = r.PoolUtil.SavePoolLocalStorageMark(pool, uint64(totalBs))
+			err = r.PoolUtil.SavePoolLocalStorageMark(pool, localBS)
 			if err != nil {
 				log.Error(err, "SavePoolLocalStorageMark failed")
 				return plugin.Result{Error: err}
 			}
 
 			// update node/status capacity = totalBs
-			_, err = r.NodeUpdater.ReportLocalDiskResource(pool.Name, uint64(totalBs))
+			_, err = r.NodeUpdater.ReportLocalDiskResource(pool.Name, localBS)
 			if err != nil {
 				log.Error(err, "ReportLocalDiskResource failed")
 				return plugin.Result{Error: err}
@@ -145,28 +154,6 @@ func (r *ReportLocalStoragePlugin) Reconcile(ctx *plugin.Context) (result plugin
 			return plugin.Result{Error: err}
 		}
 		var sp = node.Pool
-
-		/*
-			var localStorePct int
-			var volInState *v1.AntstorVolume
-			for _, item := range r.ReportLocalConfigs {
-				selector, err := metav1.LabelSelectorAsSelector(&item.LabelSelector)
-				if err != nil {
-					log.Error(err, "LabelSelectorAsSelector failed", "selector", item.LabelSelector)
-					continue
-				}
-				if selector.Matches(labels.Set(sp.Spec.NodeInfo.Labels)) && item.EnableDefault {
-					localStorePct = item.DefaultLocalStoragePct
-					log.Info("matched local-storage percentage", "pct", localStorePct)
-				}
-			}
-
-			volInState, err = node.GetVolumeByID(volume.Spec.Uuid)
-			if err == nil {
-				log.Info("copy volume into state")
-				*volInState = *volume
-			}
-		*/
 
 		var expectLocalSize = CalculateLocalStorageCapacity(node)
 		var localSizeStr = strconv.Itoa(int(expectLocalSize))
