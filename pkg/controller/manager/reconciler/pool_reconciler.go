@@ -20,6 +20,7 @@ import (
 
 	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/kubeutil"
+	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/config"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/reconciler/plugin"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/state"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/misc"
@@ -39,6 +40,7 @@ var (
 type StoragePoolReconcileHandler struct {
 	client.Client
 
+	Cfg      config.Config
 	State    state.StateIface
 	PoolUtil kubeutil.StoragePoolUpdater
 	KubeCli  kubernetes.Interface
@@ -227,6 +229,7 @@ func (r *StoragePoolReconcileHandler) handleDeletion(pCtx *plugin.Context) (resu
 func (r *StoragePoolReconcileHandler) saveToState(sp *v1.StoragePool, log logr.Logger) (result plugin.Result) {
 	var patch = client.MergeFrom(sp.DeepCopy())
 	var err error
+	var node *state.Node
 
 	r.State.SetStoragePool(sp)
 
@@ -241,6 +244,19 @@ func (r *StoragePoolReconcileHandler) saveToState(sp *v1.StoragePool, log logr.L
 		return plugin.Result{
 			Break: true,
 			Error: err,
+		}
+	}
+
+	// try to add reservation by config
+	node, err = r.State.GetNodeByNodeID(sp.Name)
+	if err != nil {
+		log.Error(err, "GetNodeByNodeID error")
+	}
+	for _, item := range r.Cfg.Scheduler.NodeReservations {
+		if node != nil {
+			if _, has := node.GetReservation(item.ID); !has {
+				node.Reserve(state.NewReservation(item.ID, item.Size))
+			}
 		}
 	}
 

@@ -30,6 +30,13 @@ type SchedulerConfig struct {
 	NodeCacheSelector map[string]string `json:"nodeCacheSelector" yaml:"nodeCacheSelector"`
 	// MinLocalStoragePct defines the minimun percentage of local storage to be reserved on one node.
 	MinLocalStoragePct int `json:"minLocalStoragePct" yaml:"minLocalStoragePct"`
+	// NodeReservations defines the reservations on each node
+	NodeReservations []NodeReservation `json:"nodeReservations" yaml:"nodeReservations"`
+}
+
+type NodeReservation struct {
+	ID   string `json:"id" yaml:"id"`
+	Size int64  `json:"size" yaml:"size"`
 }
 
 type NoScheduleConfig struct {

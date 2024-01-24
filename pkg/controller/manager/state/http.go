@@ -13,18 +13,29 @@ type NodeStateAPI struct {
 	KernelLVM  *v1.KernelLVM     `json:"kernelLVM,omitempty"`
 	SpdkLVS    *v1.SpdkLVStore   `json:"spdkLVS,omitempty"`
 	// Volumes breif info
-	Volumes []VolumeBreif `json:"volumes"`
-	// FreeSize of the pool
-	FreeSize int64 `json:"freeSize"`
+	Volumes []VolumeBrief `json:"volumes"`
+	// VgFreeSize of the pool
+	VgFreeSize int64 `json:"vgFreeSize"`
+	// MemFreeSize in controller memory
+	MemFreeSize int64 `json:"memFreeSize"`
+	// MemFreeSizeStr readable size in controller memory
+	MemFreeSizeStr string `json:"memFreeSizeStr"`
 	// Conditions of the pool status
 	Conditions map[v1.PoolConditionType]v1.ConditionStatus `json:"conditions"`
+	// Resvervations on the node
+	Resvervations []ReservationBreif `json:"reservations"`
 }
 
-type VolumeBreif struct {
+type VolumeBrief struct {
 	Namespace  string `json:"ns"`
 	Name       string `json:"name"`
 	DataHolder string `json:"dataHolder"`
 	Size       int64  `json:"size"`
+}
+
+type ReservationBreif struct {
+	ID   string `json:"id"`
+	Size int64  `json:"size"`
 }
 
 func NewStateHandler(s StateIface) *StateHandler {
@@ -49,11 +60,14 @@ func (h *StateHandler) ServeHTTP(writer http.ResponseWriter, req *http.Request) 
 	}
 
 	var api = NodeStateAPI{
-		Name:       spName,
-		PoolLabels: node.Pool.Labels,
-		KernelLVM:  &node.Pool.Spec.KernelLVM,
-		SpdkLVS:    &node.Pool.Spec.SpdkLVStore,
-		FreeSize:   node.Pool.Status.VGFreeSize.Value(),
+		Name:           spName,
+		PoolLabels:     node.Pool.Labels,
+		KernelLVM:      &node.Pool.Spec.KernelLVM,
+		SpdkLVS:        &node.Pool.Spec.SpdkLVStore,
+		VgFreeSize:     node.Pool.Status.VGFreeSize.Value(),
+		MemFreeSize:    int64(node.FreeResource.Storage().AsApproximateFloat64()),
+		MemFreeSizeStr: node.FreeResource.Storage().String(),
+
 		Conditions: make(map[v1.PoolConditionType]v1.ConditionStatus),
 	}
 
@@ -62,12 +76,21 @@ func (h *StateHandler) ServeHTTP(writer http.ResponseWriter, req *http.Request) 
 	}
 
 	for _, vol := range node.Volumes {
-		api.Volumes = append(api.Volumes, VolumeBreif{
+		api.Volumes = append(api.Volumes, VolumeBrief{
 			Namespace:  vol.Namespace,
 			Name:       vol.Name,
 			Size:       int64(vol.Spec.SizeByte),
 			DataHolder: vol.Labels[v1.VolumeDataHolderKey],
 		})
+	}
+
+	if node.resvSet != nil {
+		for _, resv := range node.resvSet.Items() {
+			api.Resvervations = append(api.Resvervations, ReservationBreif{
+				ID:   resv.ID(),
+				Size: resv.Size(),
+			})
+		}
 	}
 
 	bs, err := json.Marshal(api)
