@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"strconv"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
 	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/kubeutil"
@@ -41,6 +43,7 @@ func NewReportLocalStoragePlugin(h *controllers.PluginHandle) (p plugin.Plugin, 
 	}
 
 	p = &ReportLocalStoragePlugin{
+		Client:             h.Client,
 		NodeUpdater:        kubeutil.NewKubeNodeInfoGetter(h.Req.KubeCli),
 		PoolUtil:           kubeutil.NewStoragePoolUtil(h.Client),
 		ReportLocalConfigs: pluginCfg.DefaultLocalSpaceRules,
@@ -50,7 +53,7 @@ func NewReportLocalStoragePlugin(h *controllers.PluginHandle) (p plugin.Plugin, 
 
 // ReportLocalStoragePlugin is a AntstorVolume plugin.
 type ReportLocalStoragePlugin struct {
-	// NodeGetter  kubeutil.NodeInfoGetterIface
+	Client      client.Client
 	NodeUpdater kubeutil.NodeUpdaterIface
 	PoolUtil    kubeutil.StoragePoolUpdater
 
@@ -96,18 +99,44 @@ func (r *ReportLocalStoragePlugin) Reconcile(ctx *plugin.Context) (result plugin
 
 	// report the local storage when the StoragePool is created in the first place.
 	if isPool && pool != nil {
-		totalBs := pool.GetAvailableBytes()
-		if _, has := pool.Labels[v1.PoolLocalStorageBytesKey]; !has {
-			log.Info("update node/status capacity", "local-storage", totalBs)
-			// update Pool Label "obnvmf/node-local-storage-size" = totalBs
-			err = r.PoolUtil.SavePoolLocalStorageMark(pool, uint64(totalBs))
+		var (
+			localBS      uint64
+			node         corev1.Node
+			snode        *state.Node
+			hasNodeRes   bool
+			hasPoolLabel bool
+		)
+
+		// calculate local storage
+		snode, err = stateObj.GetNodeByNodeID(pool.Name)
+		if err != nil {
+			log.Error(err, "find node failed")
+			return plugin.Result{Error: err}
+		}
+		localBS = CalculateLocalStorageCapacity(snode)
+
+		// get node
+		err = r.Client.Get(ctx.ReqCtx.Ctx, client.ObjectKey{Name: pool.Name}, &node)
+		if err != nil {
+			log.Error(err, "getting Node failed")
+			return plugin.Result{Error: err}
+		}
+
+		_, hasNodeRes = node.Status.Allocatable[kubeutil.SdsLocalStorageResourceKey]
+		_, hasPoolLabel = pool.Labels[v1.PoolLocalStorageBytesKey]
+		log.Info("check pool PoolLocalStorageBytesKey and node SdsLocalStorageResourceKey", "nodeResource", hasNodeRes, "hasPoolLabel", hasPoolLabel)
+
+		if !hasPoolLabel || !hasNodeRes {
+			log.Info("update node/status capacity", "local-storage", localBS)
+			// update Pool Label "obnvmf/local-storage-bytes" = totalBs
+			err = r.PoolUtil.SavePoolLocalStorageMark(pool, localBS)
 			if err != nil {
 				log.Error(err, "SavePoolLocalStorageMark failed")
 				return plugin.Result{Error: err}
 			}
 
 			// update node/status capacity = totalBs
-			_, err = r.NodeUpdater.ReportLocalDiskResource(pool.Name, uint64(totalBs))
+			_, err = r.NodeUpdater.ReportLocalDiskResource(pool.Name, localBS)
 			if err != nil {
 				log.Error(err, "ReportLocalDiskResource failed")
 				return plugin.Result{Error: err}
@@ -125,28 +154,6 @@ func (r *ReportLocalStoragePlugin) Reconcile(ctx *plugin.Context) (result plugin
 			return plugin.Result{Error: err}
 		}
 		var sp = node.Pool
-
-		/*
-			var localStorePct int
-			var volInState *v1.AntstorVolume
-			for _, item := range r.ReportLocalConfigs {
-				selector, err := metav1.LabelSelectorAsSelector(&item.LabelSelector)
-				if err != nil {
-					log.Error(err, "LabelSelectorAsSelector failed", "selector", item.LabelSelector)
-					continue
-				}
-				if selector.Matches(labels.Set(sp.Spec.NodeInfo.Labels)) && item.EnableDefault {
-					localStorePct = item.DefaultLocalStoragePct
-					log.Info("matched local-storage percentage", "pct", localStorePct)
-				}
-			}
-
-			volInState, err = node.GetVolumeByID(volume.Spec.Uuid)
-			if err == nil {
-				log.Info("copy volume into state")
-				*volInState = *volume
-			}
-		*/
 
 		var expectLocalSize = CalculateLocalStorageCapacity(node)
 		var localSizeStr = strconv.Itoa(int(expectLocalSize))

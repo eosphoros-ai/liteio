@@ -21,6 +21,11 @@ func BasicFilterFunc(ctx *FilterContext, n *state.Node, vol *v1.AntstorVolume) b
 	)
 	// check if err is nil
 
+	// if voume matches reservation, then do not do following checks
+	if pass, hasErr := matchReservationFilter(ctx, n, vol); hasErr || pass {
+		return pass
+	}
+
 	// consider Pool FreeSpace
 	var freeRes = n.GetFreeResourceNonLock()
 	var freeDisk = freeRes[v1.ResourceDiskPoolByte]
@@ -99,4 +104,24 @@ func BasicFilterFunc(ctx *FilterContext, n *state.Node, vol *v1.AntstorVolume) b
 	}
 
 	return true
+}
+
+func matchReservationFilter(ctx *FilterContext, n *state.Node, vol *v1.AntstorVolume) (pass, hasError bool) {
+	if resvId, has := vol.Annotations[v1.ReservationIDKey]; has {
+		free := n.FreeResource.Storage()
+		if free.CmpInt64(0) < 0 {
+			ctx.Error.AddReason(ReasonPoolFreeSize)
+			return false, true
+		}
+
+		if r, has := n.GetReservation(resvId); has {
+			if r.Size() < int64(vol.Spec.SizeByte) {
+				ctx.Error.AddReason(ReasonReservationSize)
+				return false, true
+			}
+			return true, false
+		}
+	}
+
+	return false, false
 }

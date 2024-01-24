@@ -97,3 +97,10 @@ However, it is important to note that LiteIO does not currently support data rep
 
 - [x] Disk-Agent exposes metric service
 - [ ] SPDK volume replica
+
+
+## Contact
+
+Wechat Group QRCode
+
+![Wechat Group](doc/image/wechat_group.JPG)

@@ -63,6 +63,13 @@ func (n *Node) AddVolume(vol *v1.AntstorVolume) (err error) {
 	defer n.volLock.Unlock()
 
 	var nodeID = n.Info.ID
+	var duplicate bool
+
+	// delete reservation if volume has reservation id
+	if resvID := getVolumeReservationID(vol); resvID != "" {
+		n.resvSet.Unreserve(resvID)
+	}
+
 	// check duplicate
 	for _, item := range n.Volumes {
 		if item.Name == vol.Name {
@@ -77,18 +84,15 @@ func (n *Node) AddVolume(vol *v1.AntstorVolume) (err error) {
 			// save the newer volume
 			*item = *vol.DeepCopy()
 			klog.Infof("vol %s already in node %s. type and sizes equal to each other", vol.Name, nodeID)
-			return
+			duplicate = true
 		}
 	}
 
-	// delete reservation if volume has reservation id
-	if resvID := getVolumeReservationID(vol); resvID != "" {
-		n.resvSet.Unreserve(resvID)
+	if !duplicate {
+		// volume reside on Node
+		vol.Spec.TargetNodeId = n.Pool.Spec.NodeInfo.ID
+		n.Volumes = append(n.Volumes, vol)
 	}
-
-	n.Volumes = append(n.Volumes, vol)
-	// volume reside on Node
-	vol.Spec.TargetNodeId = n.Pool.Spec.NodeInfo.ID
 
 	// update free resource
 	n.FreeResource = n.GetFreeResourceNonLock()
@@ -231,6 +235,25 @@ func (n *Node) GetFreeResourceNonLock() (free corev1.ResourceList) {
 
 // Reserve storage resource for Node
 func (n *Node) Reserve(r ReservationIface) {
+	// if volume is already binded, then skip reservation.
+	var resvID = r.ID()
+	for _, vol := range n.Volumes {
+		if resvID == getVolumeReservationID(vol) {
+			return
+		}
+	}
+
+	// check free resource
+	if free := n.FreeResource.Storage(); free != nil {
+		if free.CmpInt64(r.Size()) < 0 {
+			klog.Errorf("node %s have no enough disk pool space for reservation %s", n.Info.ID, resvID)
+			return
+		}
+	}
+
+	n.volLock.Lock()
+	defer n.volLock.Unlock()
+
 	n.resvSet.Reserve(r)
 	// update free resource
 	n.FreeResource = n.GetFreeResourceNonLock()
@@ -238,7 +261,14 @@ func (n *Node) Reserve(r ReservationIface) {
 
 // Unreserve storage resource
 func (n *Node) Unreserve(id string) {
+	n.volLock.Lock()
+	defer n.volLock.Unlock()
+
 	n.resvSet.Unreserve(id)
 	// update free resource
 	n.FreeResource = n.GetFreeResourceNonLock()
+}
+
+func (n *Node) GetReservation(id string) (r ReservationIface, has bool) {
+	return n.resvSet.GetById(id)
 }

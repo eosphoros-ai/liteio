@@ -16,6 +16,7 @@ const (
 	ReasonNodeAffinity      = "NodeAffinity"
 	ReasonPoolAffinity      = "PoolAffinity"
 	ReasonPoolUnschedulable = "PoolUnschedulable"
+	ReasonReservationSize   = "ReservationTooSmall"
 
 	NoStoragePoolAvailable = "NoStoragePoolAvailable"
 	//
