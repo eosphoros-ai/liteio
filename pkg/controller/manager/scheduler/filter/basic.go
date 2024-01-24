@@ -23,6 +23,7 @@ func BasicFilterFunc(ctx *FilterContext, n *state.Node, vol *v1.AntstorVolume) b
 
 	// if voume matches reservation, then do not do following checks
 	if pass, hasErr := matchReservationFilter(ctx, n, vol); hasErr || pass {
+		klog.Infof("Reservation pass %t, vol=%s Pool %s", pass, vol.Name, n.Pool.Name)
 		return pass
 	}
 
@@ -120,6 +121,10 @@ func matchReservationFilter(ctx *FilterContext, n *state.Node, vol *v1.AntstorVo
 				return false, true
 			}
 			return true, false
+		} else {
+			// volume has reservation id, but no such reservation in node
+			ctx.Error.AddReason(ReasonReserveNotMatch)
+			return false, true
 		}
 	}
 
