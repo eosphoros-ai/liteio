@@ -25,6 +25,9 @@ data:
         nodeTaints:
         - key: node.sigma.ali/lifecycle
           operator: Exists
+      #nodeReservations:
+      #- id: obnvmf/app-vol
+      #  size: 107374182400 # 100Gi
     pluginConfigs:
       defaultLocalSpaceRules:
         - enableDefault: true
