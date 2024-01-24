@@ -111,7 +111,8 @@ func (r *ReportLocalStoragePlugin) Reconcile(ctx *plugin.Context) (result plugin
 		snode, err = stateObj.GetNodeByNodeID(pool.Name)
 		if err != nil {
 			log.Error(err, "find node failed")
-			return plugin.Result{Error: err}
+			// local line calculation should not block the reconciling
+			return plugin.Result{}
 		}
 		localBS = CalculateLocalStorageCapacity(snode)
 
