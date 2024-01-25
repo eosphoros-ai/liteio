@@ -1,10 +1,10 @@
 package config
 
 const (
-	SigmaLabelKeyNodeIP   = "sigma.ali/node-ip"
-	SigmaLabelKeyHostname = "sigma.ali/armory-hostname"
-	SigmaLabelKeyRack     = "sigma.ali/rack"
-	SigmaLabelKeyRoom     = "sigma.ali/room"
+	SigmaLabelKeyNodeIP   = "lite.io/ip"
+	SigmaLabelKeyHostname = "lite.io/hostname"
+	SigmaLabelKeyRack     = "lite.io/rack"
+	SigmaLabelKeyRoom     = "lite.io/room"
 )
 
 func SetDefaults(cfg *Config) {
