@@ -3,8 +3,8 @@ package spdk
 import (
 	"testing"
 
-	spdkmock "code.alipay.com/dbplatform/node-disk-controller/pkg/generated/mocks/spdk"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/misc"
+	spdkmock "lite.io/liteio/pkg/generated/mocks/spdk"
+	"lite.io/liteio/pkg/util/misc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

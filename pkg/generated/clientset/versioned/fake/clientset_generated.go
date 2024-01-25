@@ -18,9 +18,9 @@ limitations under the License.
 package fake
 
 import (
-	clientset "code.alipay.com/dbplatform/node-disk-controller/pkg/generated/clientset/versioned"
-	volumev1 "code.alipay.com/dbplatform/node-disk-controller/pkg/generated/clientset/versioned/typed/volume.antstor.alipay.com/v1"
-	fakevolumev1 "code.alipay.com/dbplatform/node-disk-controller/pkg/generated/clientset/versioned/typed/volume.antstor.alipay.com/v1/fake"
+	clientset "lite.io/liteio/pkg/generated/clientset/versioned"
+	volumev1 "lite.io/liteio/pkg/generated/clientset/versioned/typed/volume.antstor.alipay.com/v1"
+	fakevolumev1 "lite.io/liteio/pkg/generated/clientset/versioned/typed/volume.antstor.alipay.com/v1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"

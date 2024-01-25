@@ -18,16 +18,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/kubeutil"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/config"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/reconciler"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/reconciler/handler"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/reconciler/plugin"
-	sched "code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/scheduler"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/state"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/generated/clientset/versioned"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/misc"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
+	"lite.io/liteio/pkg/controller/kubeutil"
+	"lite.io/liteio/pkg/controller/manager/config"
+	"lite.io/liteio/pkg/controller/manager/reconciler"
+	"lite.io/liteio/pkg/controller/manager/reconciler/handler"
+	"lite.io/liteio/pkg/controller/manager/reconciler/plugin"
+	sched "lite.io/liteio/pkg/controller/manager/scheduler"
+	"lite.io/liteio/pkg/controller/manager/state"
+	"lite.io/liteio/pkg/generated/clientset/versioned"
+	"lite.io/liteio/pkg/util/misc"
 )
 
 type B64EncodedMysqlDSN string

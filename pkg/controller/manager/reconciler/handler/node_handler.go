@@ -11,8 +11,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/config"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
+	"lite.io/liteio/pkg/controller/manager/config"
 )
 
 var (

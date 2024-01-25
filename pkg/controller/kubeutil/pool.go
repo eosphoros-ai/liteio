@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"strings"
 
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/klog/v2"

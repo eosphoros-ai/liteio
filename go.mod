@@ -1,4 +1,4 @@
-module code.alipay.com/dbplatform/node-disk-controller
+module lite.io/liteio
 
 go 1.16
 

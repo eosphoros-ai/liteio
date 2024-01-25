@@ -20,7 +20,7 @@ package fake
 import (
 	"context"
 
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	types "k8s.io/apimachinery/pkg/types"

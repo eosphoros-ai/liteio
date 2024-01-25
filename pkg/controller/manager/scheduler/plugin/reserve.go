@@ -3,7 +3,7 @@ package plugin
 import (
 	"context"
 
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/state"
+	"lite.io/liteio/pkg/controller/manager/state"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
 	"k8s.io/kubernetes/pkg/scheduler/framework"

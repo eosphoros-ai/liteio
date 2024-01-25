@@ -3,7 +3,7 @@
 package lvmmock
 
 import (
-	lvm "code.alipay.com/dbplatform/node-disk-controller/pkg/util/lvm"
+	lvm "lite.io/liteio/pkg/util/lvm"
 	mock "github.com/stretchr/testify/mock"
 )
 

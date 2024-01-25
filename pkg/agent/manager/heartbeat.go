@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/generated/clientset/versioned"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
+	"lite.io/liteio/pkg/generated/clientset/versioned"
 	coordv1 "k8s.io/api/coordination/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

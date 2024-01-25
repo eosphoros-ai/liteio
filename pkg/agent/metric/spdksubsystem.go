@@ -3,7 +3,7 @@ package metric
 import (
 	"fmt"
 
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/spdk"
+	"lite.io/liteio/pkg/spdk"
 	"github.com/prometheus/client_golang/prometheus"
 	"k8s.io/klog/v2"
 )

@@ -3,8 +3,8 @@ package syncmeta
 import (
 	"testing"
 
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/mysql"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
+	"lite.io/liteio/pkg/util/mysql"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

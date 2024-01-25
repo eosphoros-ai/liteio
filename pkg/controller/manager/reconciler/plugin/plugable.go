@@ -3,7 +3,7 @@ package plugin
 import (
 	"context"
 
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/state"
+	"lite.io/liteio/pkg/controller/manager/state"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"

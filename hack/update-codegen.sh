@@ -26,8 +26,8 @@ SCRIPT_ROOT=$(dirname "${BASH_SOURCE[0]}")
 #                  instead of the $GOPATH directly. For normal projects this can be dropped.
 # "deepcopy,client,informer,lister" 
 bash "${SCRIPT_ROOT}"/generate-groups.sh "deepcopy,client,lister,informer" \
-  code.alipay.com/dbplatform/node-disk-controller/pkg/generated \
-  code.alipay.com/dbplatform/node-disk-controller/pkg/api \
+  lite.io/liteio/pkg/generated \
+  lite.io/liteio/pkg/api \
   "volume.antstor.alipay.com:v1" \
   --go-header-file "${SCRIPT_ROOT}"/boilerplate.go.txt
 #  --output-base "$(dirname "${BASH_SOURCE[0]}")/../../.." \

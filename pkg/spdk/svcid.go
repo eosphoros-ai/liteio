@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"sync"
 
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/spdk/jsonrpc/client"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/misc"
+	"lite.io/liteio/pkg/spdk/jsonrpc/client"
+	"lite.io/liteio/pkg/util/misc"
 )
 
 type SvcIdAllocator struct {

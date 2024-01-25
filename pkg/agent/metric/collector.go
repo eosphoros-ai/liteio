@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/spdk"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/misc"
+	"lite.io/liteio/pkg/spdk"
+	"lite.io/liteio/pkg/util/misc"
 	"k8s.io/klog/v2"
 )
 

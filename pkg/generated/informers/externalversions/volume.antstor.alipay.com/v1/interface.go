@@ -18,7 +18,7 @@ limitations under the License.
 package v1
 
 import (
-	internalinterfaces "code.alipay.com/dbplatform/node-disk-controller/pkg/generated/informers/externalversions/internalinterfaces"
+	internalinterfaces "lite.io/liteio/pkg/generated/informers/externalversions/internalinterfaces"
 )
 
 // Interface provides access to all the informers in this group version.

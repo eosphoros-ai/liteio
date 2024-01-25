@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/osutil"
+	"lite.io/liteio/pkg/util/osutil"
 	"k8s.io/klog/v2"
 )
 

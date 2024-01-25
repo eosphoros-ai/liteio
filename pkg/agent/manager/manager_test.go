@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	fakev1 "code.alipay.com/dbplatform/node-disk-controller/pkg/generated/clientset/versioned/fake"
+	fakev1 "lite.io/liteio/pkg/generated/clientset/versioned/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

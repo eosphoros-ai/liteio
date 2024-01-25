@@ -1,6 +1,6 @@
 package lvm
 
-import "code.alipay.com/dbplatform/node-disk-controller/pkg/util/osutil"
+import "lite.io/liteio/pkg/util/osutil"
 
 var (
 	// default is cgo API; call EnableLvm2Cmd() to replace it with lvm2cmd implementation

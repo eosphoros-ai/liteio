@@ -6,14 +6,14 @@ import (
 	"os"
 	"time"
 
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/agent/config"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/agent/pool/engine"
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/spdk"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/spdk/jsonrpc/client"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/lvm"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/misc"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/osutil"
+	"lite.io/liteio/pkg/agent/config"
+	"lite.io/liteio/pkg/agent/pool/engine"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
+	"lite.io/liteio/pkg/spdk"
+	"lite.io/liteio/pkg/spdk/jsonrpc/client"
+	"lite.io/liteio/pkg/util/lvm"
+	"lite.io/liteio/pkg/util/misc"
+	"lite.io/liteio/pkg/util/osutil"
 	"k8s.io/klog/v2"
 )
 

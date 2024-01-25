@@ -1,9 +1,9 @@
 package pool
 
 import (
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/agent/config"
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/kubeutil"
+	"lite.io/liteio/pkg/agent/config"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
+	"lite.io/liteio/pkg/controller/kubeutil"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 )

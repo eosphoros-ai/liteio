@@ -18,10 +18,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/config"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/reconciler/plugin"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/state"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/misc"
+	"lite.io/liteio/pkg/controller/manager/config"
+	"lite.io/liteio/pkg/controller/manager/reconciler/plugin"
+	"lite.io/liteio/pkg/controller/manager/state"
+	"lite.io/liteio/pkg/util/misc"
 )
 
 type PlugableReconcilerIface interface {

@@ -9,11 +9,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/kubeutil"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/controllers"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/reconciler/plugin"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/state"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
+	"lite.io/liteio/pkg/controller/kubeutil"
+	"lite.io/liteio/pkg/controller/manager/controllers"
+	"lite.io/liteio/pkg/controller/manager/reconciler/plugin"
+	"lite.io/liteio/pkg/controller/manager/state"
 )
 
 type LocalStorageSetting struct {

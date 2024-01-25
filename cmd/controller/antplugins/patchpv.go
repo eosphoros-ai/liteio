@@ -3,10 +3,10 @@ package antplugin
 import (
 	"fmt"
 
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/kubeutil"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/controllers"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/reconciler/plugin"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
+	"lite.io/liteio/pkg/controller/kubeutil"
+	"lite.io/liteio/pkg/controller/manager/controllers"
+	"lite.io/liteio/pkg/controller/manager/reconciler/plugin"
 )
 
 func NewPatchPVPlugin(h *controllers.PluginHandle) (p plugin.Plugin, err error) {

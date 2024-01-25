@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/config"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/state"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
+	"lite.io/liteio/pkg/controller/manager/config"
+	"lite.io/liteio/pkg/controller/manager/state"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"

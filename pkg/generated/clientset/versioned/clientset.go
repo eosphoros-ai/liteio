@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"net/http"
 
-	volumev1 "code.alipay.com/dbplatform/node-disk-controller/pkg/generated/clientset/versioned/typed/volume.antstor.alipay.com/v1"
+	volumev1 "lite.io/liteio/pkg/generated/clientset/versioned/typed/volume.antstor.alipay.com/v1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

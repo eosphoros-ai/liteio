@@ -1,13 +1,13 @@
 package hostnvme
 
 import (
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/misc"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/version"
+	"lite.io/liteio/pkg/util/misc"
+	"lite.io/liteio/pkg/version"
 	"github.com/spf13/cobra"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/generated/clientset/versioned"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util"
+	"lite.io/liteio/pkg/generated/clientset/versioned"
+	"lite.io/liteio/pkg/util"
 	"k8s.io/klog/v2"
 	rt "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"

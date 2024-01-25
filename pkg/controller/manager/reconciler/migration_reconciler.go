@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
 	"github.com/go-logr/logr"
 	uuid "github.com/satori/go.uuid"
 	"k8s.io/apimachinery/pkg/api/errors"

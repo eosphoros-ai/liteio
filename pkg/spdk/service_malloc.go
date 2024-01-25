@@ -1,7 +1,7 @@
 package spdk
 
 import (
-	spdkrpc "code.alipay.com/dbplatform/node-disk-controller/pkg/spdk/jsonrpc/client"
+	spdkrpc "lite.io/liteio/pkg/spdk/jsonrpc/client"
 	"k8s.io/klog/v2"
 )
 

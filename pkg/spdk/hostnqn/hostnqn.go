@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"os"
 
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/misc"
+	"lite.io/liteio/pkg/util/misc"
 	"k8s.io/klog/v2"
 )
 

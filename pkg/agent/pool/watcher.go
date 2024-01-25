@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/spdk"
+	"lite.io/liteio/pkg/spdk"
 	"k8s.io/klog/v2"
 )
 

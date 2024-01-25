@@ -3,12 +3,12 @@ package plugin
 import (
 	"errors"
 
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/config"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/controllers"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/reconciler/handler"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/state"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
+	"lite.io/liteio/pkg/controller/manager/config"
+	"lite.io/liteio/pkg/controller/manager/controllers"
+	"lite.io/liteio/pkg/controller/manager/reconciler/handler"
+	"lite.io/liteio/pkg/controller/manager/state"
+	"lite.io/liteio/pkg/util"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"

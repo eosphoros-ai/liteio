@@ -3,12 +3,12 @@ package agent
 import (
 	"time"
 
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/agent/manager"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/agent/metric"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/generated/clientset/versioned"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/misc"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/version"
+	"lite.io/liteio/pkg/agent/manager"
+	"lite.io/liteio/pkg/agent/metric"
+	"lite.io/liteio/pkg/generated/clientset/versioned"
+	"lite.io/liteio/pkg/util"
+	"lite.io/liteio/pkg/util/misc"
+	"lite.io/liteio/pkg/version"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"

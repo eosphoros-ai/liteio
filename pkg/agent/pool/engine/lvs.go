@@ -3,9 +3,9 @@ package engine
 import (
 	"fmt"
 
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/spdk"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/spdk/jsonrpc/client"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
+	"lite.io/liteio/pkg/spdk"
+	"lite.io/liteio/pkg/spdk/jsonrpc/client"
 	"k8s.io/klog/v2"
 )
 

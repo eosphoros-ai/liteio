@@ -1,6 +1,6 @@
 package config
 
-import v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
+import v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
 
 const (
 	AioBdevType  BdevType = "aioBdev"

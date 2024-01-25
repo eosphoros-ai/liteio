@@ -3,7 +3,7 @@ package spdk
 import (
 	"fmt"
 
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/spdk/jsonrpc/client"
+	"lite.io/liteio/pkg/spdk/jsonrpc/client"
 	"k8s.io/klog/v2"
 )
 

@@ -1,7 +1,7 @@
 package rpcserver
 
 import (
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/csi/driver"
+	"lite.io/liteio/pkg/csi/driver"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/protobuf/ptypes/wrappers"
 	"golang.org/x/net/context"

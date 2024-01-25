@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"time"
 
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/generated/clientset/versioned"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
+	"lite.io/liteio/pkg/generated/clientset/versioned"
+	"lite.io/liteio/pkg/util"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
