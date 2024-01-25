@@ -5,9 +5,9 @@ import (
 	"io/fs"
 	"os"
 
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/spdk"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/spdk/jsonrpc/client"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/misc"
+	"lite.io/liteio/pkg/spdk"
+	"lite.io/liteio/pkg/spdk/jsonrpc/client"
+	"lite.io/liteio/pkg/util/misc"
 	"k8s.io/klog/v2"
 )
 

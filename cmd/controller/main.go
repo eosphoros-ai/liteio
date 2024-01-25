@@ -3,11 +3,11 @@ package main
 import (
 	"os"
 
-	antplugin "code.alipay.com/dbplatform/node-disk-controller/cmd/controller/antplugins"
-	antfilter "code.alipay.com/dbplatform/node-disk-controller/cmd/controller/antplugins/filter"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/controllers"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/scheduler/filter"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/csi"
+	antplugin "lite.io/liteio/cmd/controller/antplugins"
+	antfilter "lite.io/liteio/cmd/controller/antplugins/filter"
+	"lite.io/liteio/pkg/controller/manager/controllers"
+	"lite.io/liteio/pkg/controller/manager/scheduler/filter"
+	"lite.io/liteio/pkg/csi"
 )
 
 func main() {

@@ -17,7 +17,7 @@ GO     := $(GOENV) go build
 GOTEST := CGO_ENABLED=0 go test -v -cover
 
 PACKAGE_LIST := $$(go list ./... | grep -vE "cmd|deprecated|generated")
-PACKAGE_DIRECTORIES := $(PACKAGE_LIST) | sed 's|code.alipay.com/dbplatform/node-disk-controller/||'
+PACKAGE_DIRECTORIES := $(PACKAGE_LIST) | sed 's|lite.io/liteio/||'
 COVERPKG := $(shell echo $(PACKAGE_LIST) | tr " " ",")
 FILES := $$(find $$($(PACKAGE_DIRECTORIES)) -name "*.go")
 FAIL_ON_STDOUT := awk '{ print } END { if (NR > 0) { exit 1 } }'

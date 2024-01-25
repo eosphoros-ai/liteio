@@ -8,9 +8,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/reconciler/plugin"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/misc"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
+	"lite.io/liteio/pkg/controller/manager/reconciler/plugin"
+	"lite.io/liteio/pkg/util/misc"
 )
 
 type AntstorDataControlReconcileHandler struct {

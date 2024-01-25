@@ -3,8 +3,8 @@ package main
 import (
 	"os"
 
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/scheduler/plugin"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/version"
+	"lite.io/liteio/pkg/controller/manager/scheduler/plugin"
+	"lite.io/liteio/pkg/version"
 	"k8s.io/component-base/logs"
 )
 

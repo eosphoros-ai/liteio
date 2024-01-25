@@ -3,8 +3,8 @@ package kubeutil
 import (
 	"testing"
 
-	// "code.alipay.com/dbplatform/node-disk-controller/pkg/config"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/agent/config"
+	// "lite.io/liteio/pkg/config"
+	"lite.io/liteio/pkg/agent/config"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"

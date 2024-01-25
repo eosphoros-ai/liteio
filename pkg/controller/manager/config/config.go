@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/misc"
+	"lite.io/liteio/pkg/util/misc"
 	corev1 "k8s.io/api/core/v1"
 )
 

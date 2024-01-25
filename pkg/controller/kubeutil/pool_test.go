@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
-	fakev1 "code.alipay.com/dbplatform/node-disk-controller/pkg/generated/clientset/versioned/fake"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
+	fakev1 "lite.io/liteio/pkg/generated/clientset/versioned/fake"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"

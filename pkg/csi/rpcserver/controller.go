@@ -16,12 +16,12 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/agent/config"
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/kubeutil"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/csi/client"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/csi/driver"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/misc"
+	"lite.io/liteio/pkg/agent/config"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
+	"lite.io/liteio/pkg/controller/kubeutil"
+	"lite.io/liteio/pkg/csi/client"
+	"lite.io/liteio/pkg/csi/driver"
+	"lite.io/liteio/pkg/util/misc"
 )
 
 var _ csi.ControllerServer = &ControllerServer{}

@@ -60,7 +60,7 @@ function version_util::version::ldflag() {
   local key=${1}
   local val=${2}
 
-  echo "-X 'code.alipay.com/dbplatform/node-disk-controller/pkg/version.${key}=${val}'"
+  echo "-X 'lite.io/liteio/pkg/version.${key}=${val}'"
 }
 
 # Prints the value that needs to be passed to the -ldflags parameter of go build

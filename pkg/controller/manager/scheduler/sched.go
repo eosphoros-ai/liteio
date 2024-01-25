@@ -3,11 +3,11 @@ package scheduler
 import (
 	"sync"
 
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/config"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/scheduler/filter"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/scheduler/priority"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/state"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
+	"lite.io/liteio/pkg/controller/manager/config"
+	"lite.io/liteio/pkg/controller/manager/scheduler/filter"
+	"lite.io/liteio/pkg/controller/manager/scheduler/priority"
+	"lite.io/liteio/pkg/controller/manager/state"
 	"k8s.io/klog/v2"
 )
 

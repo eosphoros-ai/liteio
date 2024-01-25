@@ -16,14 +16,14 @@ import (
 	"k8s.io/mount-utils"
 	"k8s.io/utils/exec"
 
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/csi/client"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/csi/driver"
-	spdkclient "code.alipay.com/dbplatform/node-disk-controller/pkg/spdk/jsonrpc/client"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/spdk/jsonrpc/nvme"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/kata"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/misc"
-	mkfs "code.alipay.com/dbplatform/node-disk-controller/pkg/util/mount"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
+	"lite.io/liteio/pkg/csi/client"
+	"lite.io/liteio/pkg/csi/driver"
+	spdkclient "lite.io/liteio/pkg/spdk/jsonrpc/client"
+	"lite.io/liteio/pkg/spdk/jsonrpc/nvme"
+	"lite.io/liteio/pkg/util/kata"
+	"lite.io/liteio/pkg/util/misc"
+	mkfs "lite.io/liteio/pkg/util/mount"
 )
 
 const (

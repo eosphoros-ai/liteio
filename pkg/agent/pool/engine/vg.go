@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/lvm"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/misc"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/mount"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
+	"lite.io/liteio/pkg/util/lvm"
+	"lite.io/liteio/pkg/util/misc"
+	"lite.io/liteio/pkg/util/mount"
 	"k8s.io/klog/v2"
 )
 

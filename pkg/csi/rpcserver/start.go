@@ -7,8 +7,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/mount-utils"
 
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/csi/client"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/csi/driver"
+	"lite.io/liteio/pkg/csi/client"
+	"lite.io/liteio/pkg/csi/driver"
 )
 
 var DefaultBackOff = wait.Backoff{

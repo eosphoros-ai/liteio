@@ -1,7 +1,7 @@
 package plugin
 
 import (
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 )

@@ -22,9 +22,9 @@ import (
 	sync "sync"
 	time "time"
 
-	versioned "code.alipay.com/dbplatform/node-disk-controller/pkg/generated/clientset/versioned"
-	internalinterfaces "code.alipay.com/dbplatform/node-disk-controller/pkg/generated/informers/externalversions/internalinterfaces"
-	volumeantstoralipaycom "code.alipay.com/dbplatform/node-disk-controller/pkg/generated/informers/externalversions/volume.antstor.alipay.com"
+	versioned "lite.io/liteio/pkg/generated/clientset/versioned"
+	internalinterfaces "lite.io/liteio/pkg/generated/informers/externalversions/internalinterfaces"
+	volumeantstoralipaycom "lite.io/liteio/pkg/generated/informers/externalversions/volume.antstor.alipay.com"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

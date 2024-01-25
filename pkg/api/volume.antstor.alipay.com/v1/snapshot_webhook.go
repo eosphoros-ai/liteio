@@ -1,7 +1,7 @@
 package v1
 
 import (
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util"
+	"lite.io/liteio/pkg/util"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"

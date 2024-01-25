@@ -18,8 +18,8 @@ limitations under the License.
 package volume
 
 import (
-	internalinterfaces "code.alipay.com/dbplatform/node-disk-controller/pkg/generated/informers/externalversions/internalinterfaces"
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/generated/informers/externalversions/volume.antstor.alipay.com/v1"
+	internalinterfaces "lite.io/liteio/pkg/generated/informers/externalversions/internalinterfaces"
+	v1 "lite.io/liteio/pkg/generated/informers/externalversions/volume.antstor.alipay.com/v1"
 )
 
 // Interface provides access to each of this group's versions.

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/klog/v2"

@@ -18,7 +18,7 @@ limitations under the License.
 package fake
 
 import (
-	volumev1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
+	volumev1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

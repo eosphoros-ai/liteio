@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"time"
 
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/mysql"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
+	"lite.io/liteio/pkg/util/mysql"
 	"github.com/go-xorm/xorm"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2"

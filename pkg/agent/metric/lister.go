@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
 	"golang.org/x/sys/unix"
 	"k8s.io/klog/v2"
 )

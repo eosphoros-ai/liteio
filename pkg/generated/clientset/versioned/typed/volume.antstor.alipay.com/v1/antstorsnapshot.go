@@ -21,8 +21,8 @@ import (
 	"context"
 	"time"
 
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
-	scheme "code.alipay.com/dbplatform/node-disk-controller/pkg/generated/clientset/versioned/scheme"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
+	scheme "lite.io/liteio/pkg/generated/clientset/versioned/scheme"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"

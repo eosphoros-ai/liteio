@@ -3,9 +3,9 @@ package controllers
 import (
 	"fmt"
 
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/reconciler/plugin"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/syncmeta"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/generated/clientset/versioned"
+	"lite.io/liteio/pkg/controller/manager/reconciler/plugin"
+	"lite.io/liteio/pkg/controller/syncmeta"
+	"lite.io/liteio/pkg/generated/clientset/versioned"
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"

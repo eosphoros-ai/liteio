@@ -3,7 +3,7 @@
 package spdkmock
 
 import (
-	client "code.alipay.com/dbplatform/node-disk-controller/pkg/spdk/jsonrpc/client"
+	client "lite.io/liteio/pkg/spdk/jsonrpc/client"
 	mock "github.com/stretchr/testify/mock"
 )
 

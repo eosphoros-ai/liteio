@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	spdkmock "code.alipay.com/dbplatform/node-disk-controller/pkg/generated/mocks/spdk"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/spdk/jsonrpc/client"
+	spdkmock "lite.io/liteio/pkg/generated/mocks/spdk"
+	"lite.io/liteio/pkg/spdk/jsonrpc/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

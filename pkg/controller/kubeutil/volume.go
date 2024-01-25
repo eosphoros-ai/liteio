@@ -3,7 +3,7 @@ package kubeutil
 import (
 	"context"
 
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 

@@ -14,14 +14,14 @@ module your-project
 go 1.17
 
 require (
-    code.alipay.com/dbplatform/node-disk-controller v1.0.0
+    lite.io/liteio v1.0.0
 )
 
 
-replace code.alipay.com/dbplatform/node-disk-controller => github.com/eosphoros-ai/liteio v1.0.0
+replace lite.io/liteio => github.com/eosphoros-ai/liteio v1.0.0
 ```
 
-The above config will download mod from URL `github.com/eosphoros-ai/liteio@v1.0.0` and use it as mod `code.alipay.com/dbplatform/node-disk-controller`.
+The above config will download mod from URL `github.com/eosphoros-ai/liteio@v1.0.0` and use it as mod `lite.io/liteio`.
 Remember to replace mod version `v1.0.0` with a real version name.
 
 

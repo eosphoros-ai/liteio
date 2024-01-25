@@ -7,9 +7,9 @@ import (
 	"path"
 	"path/filepath"
 
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/misc"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
+	"lite.io/liteio/pkg/util"
+	"lite.io/liteio/pkg/util/misc"
 )
 
 const (

@@ -15,12 +15,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	v1 "code.alipay.com/dbplatform/node-disk-controller/pkg/api/volume.antstor.alipay.com/v1"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/reconciler/plugin"
-	sched "code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/scheduler"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/scheduler/filter"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/manager/state"
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/util/misc"
+	v1 "lite.io/liteio/pkg/api/volume.antstor.alipay.com/v1"
+	"lite.io/liteio/pkg/controller/manager/reconciler/plugin"
+	sched "lite.io/liteio/pkg/controller/manager/scheduler"
+	"lite.io/liteio/pkg/controller/manager/scheduler/filter"
+	"lite.io/liteio/pkg/controller/manager/state"
+	"lite.io/liteio/pkg/util/misc"
 )
 
 type AntstorVolumeGroupReconcileHandler struct {

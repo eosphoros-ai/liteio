@@ -3,7 +3,7 @@ package plugin
 import (
 	"fmt"
 
-	"code.alipay.com/dbplatform/node-disk-controller/pkg/controller/syncmeta"
+	"lite.io/liteio/pkg/controller/syncmeta"
 	"github.com/go-logr/logr"
 )
 

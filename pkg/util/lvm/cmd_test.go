@@ -3,7 +3,7 @@ package lvm
 import (
 	"testing"
 
-	utilmock "code.alipay.com/dbplatform/node-disk-controller/pkg/generated/mocks/util"
+	utilmock "lite.io/liteio/pkg/generated/mocks/util"
 	"github.com/stretchr/testify/assert"
 )
 
