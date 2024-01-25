@@ -20,10 +20,10 @@ data:
         obnvmf/regard-as-remote: "false"
       lockSchedConfig:
         nodeSelector:
-        - key: sigma.ali/lock-node
+        - key: lite.io/lock-node
           operator: Exists
         nodeTaints:
-        - key: node.sigma.ali/lifecycle
+        - key: lite.io/hardware-broken
           operator: Exists
       #nodeReservations:
       #- id: obnvmf/app-vol
@@ -34,13 +34,13 @@ data:
           defaultLocalStoragePct: 100
           labelSelector:
             matchLabels:
-              machine.sigma.alipay.com/biz-name: cloudprovision
+              lite.io/app-type: db
       autoAdjustLocal:
         enable: true
         maxCountInProcess: 1
         labelSelector:
           matchLabels:
-            machine.sigma.alipay.com/biz-name: cloudprovision
+            lite.io/app-type: db
   agent-config.yaml: |
     storage:
       pooling:

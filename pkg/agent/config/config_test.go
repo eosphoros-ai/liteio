@@ -20,7 +20,7 @@ storage:
     type: aioBdev
     name: aio-bdev-xxx
 nodeInfoKeys:
-  ipLabelKey: ali.com/ip`
+  ipLabelKey: liteio.io/ip`
 
 	cfg, err := Load([]byte(cfgStr))
 	assert.NoError(t, err)

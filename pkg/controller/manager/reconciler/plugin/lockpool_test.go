@@ -13,7 +13,7 @@ func TestNodeSelector(t *testing.T) {
 	if err != nil {
 		t.Log(err)
 	}
-	require, err := labels.NewRequirement("sigma.ali/lock-node", op, nil)
+	require, err := labels.NewRequirement("lite.io/lock-node", op, nil)
 	if err != nil {
 		t.Log(err)
 	}
