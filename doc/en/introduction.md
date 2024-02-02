@@ -12,7 +12,7 @@ We hope to attract more community ideas, only through openness and collaboration
 
 ![横版组合标.png](https://intranetproxy.alipay.com/skylark/lark/0/2024/png/162424/1706753759142-85c7d65b-c479-458e-b321-936851f874a7.png#clientId=uc6b5bffa-c969-4&from=ui&id=u328b3307&originHeight=1000&originWidth=2000&originalType=binary&ratio=1&rotation=0&showTitle=false&size=86246&status=done&style=none&taskId=u3fdb5574-b547-4b69-86d6-964c3769987&title=)
 
-LiteIO is a **high-performance and scalable cloud-native block device services **, specifically designed for Kubernetes in hyper-converged architecture. It has been incubated within Ant Group for 3 years and has been widely used in the production environment, providing stable, efficient and scalable disk services for Ant Group's entire data-based and storage-based products.
+LiteIO is a **high-performance and scalable cloud-native block device services**, specifically designed for Kubernetes in hyper-converged architecture. It has been incubated within Ant Group for 3 years and has been widely used in the production environment, providing stable, efficient and scalable disk services for Ant Group's entire data-based and storage-based products.
 
 LiteIO is a common technology that shares local disks and logical volumes to other remote servers through the network, combining Kubernetes scheduling in cloud-native environments to manage and pool a series of disks uniformly. Compared with traditional distributed storage, the point-to-point technology design effectively controls the explosion radius caused by hardware failures while eliminating storage redundancy, thus providing more usable space.
 
