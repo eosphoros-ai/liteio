@@ -76,7 +76,7 @@ The overall framework of Target, as depicted below, necessitates the uninterrupt
 
 ## **Hot Migration**
 
-The volume hot migration feature is designed to transfer volume data from the original Target to a new Target without affecting the business. Once the migration is complete, the Host completes the link switching, thereby enabling a seamless transition of the business to the new Target without any perceived interruption.
+The volume hot migration feature is designed to transfer volume data from the original Target to a new Target without affecting the business. Once the migration is complete, the Host completes the pipeline switching, thereby enabling a seamless transition of the business to the new Target without any perceived interruption.
 
 During hot migration, the approach employed to transmit data from the original Target to the new Target is through a multi-phase iterative cycle. Prior to each iteration, a data map is extracted from the volume, and data is copied in accordance with this map. During the first iteration, a considerable data may need to be copied. In subsequent iterations, only the data that has been newly modified (write or discard) during the preceding migration phase needs to be copied. Providing that the migration bandwidth exceeds the bandwidth of new write data, after several rounds of replication, the data discrepancy between the original Target and the new Target will progressively diminish, enabling the final round of copying to be performed with IO operations halted.
 
@@ -88,7 +88,7 @@ LiteIO has integrated with CSI's `ExpandVolume` interface, enabling users to imp
 
 ## **Multi-Disk**
 
-In the point-to-point data link mode, it is inevitable that some storage resource fragments will arise. LiteIO is capable of aggregating these fragments into a single volume for business utilization. This approach introduces a higher failure rate issue: if any node providing the fragments fails, the volume becomes unavailable. Fortunately, there is an internal business, LDG, which can tolerate such a failure rate, thus making the most of the resources. LDG (Logic Data Guard) is designed to construct a routine logical primary-standby database, offering a one-stop lifecycle management and application control platform for the primary-standby databases. To enhance stability and mitigate data risks during operations such as upgrades, maintenance, and accidents, LDG also aims to avert these risks while enhancing data manipulation capabilities.
+In the point-to-point data pipeline mode, it is inevitable that some storage resource fragments will arise. LiteIO is capable of aggregating these fragments into a single volume for business utilization. This approach introduces a higher failure rate issue: if any node providing the fragments fails, the volume becomes unavailable. Fortunately, there is an internal business, LDG, which can tolerate such a failure rate, thus making the most of the resources. LDG (Logic Data Guard) is designed to construct a routine logical primary-standby database, offering a one-stop lifecycle management and application control platform for the primary-standby databases. To enhance stability and mitigate data risks during operations such as upgrades, maintenance, and accidents, LDG also aims to avert these risks while enhancing data manipulation capabilities.
 
 ## **Thin Provisioning**
 
