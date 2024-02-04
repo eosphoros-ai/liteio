@@ -29,7 +29,7 @@ Databases are IO-intensive software systems that require exceptional stability a
 
 Traditional distributed storage represents a decent solution, but within the domain of databases, it introduces several problems:
 
-- **Ascension In Replication Count**(Cost): The advantage of distributed storage lies in the pooling storage through erasure coding (EC) and multi-replication techniques, which offer robust protection against single hardware failures. However, under this architecture, the application of EC and multi-replication results in a replication factor greater than 1 for each data segment, usually between 1.375 and 2. As an important component of business services, databases often necessitate geo-redundancy and disaster recovery across different availability zones (AZ) at the upper layer, with a backup replication already existing in another AZ. The total number of data replicas is set to rise.
+- **Ascension In Replication Count**(Cost): The advantage of distributed storage lies in the pooling storage through erasure coding (EC) and multi-replica techniques, which offer robust protection against single hardware failures. However, under this architecture, the application of EC and multi-replica results in a replication factor greater than 1 for each data segment, usually between 1.375 and 2. As an important component of business services, databases often necessitate geo-redundancy and disaster recovery across different availability zones (AZ) at the upper layer, with a backup replication already existing in another AZ. The total number of data replicas is set to rise.
 - **Large Explosion Radius**(Stability): Distributed storage typically features a centralized metadata layer, when subject to failure, can lead to global exceptions.
 
 ## **Design Ideas**
@@ -44,7 +44,7 @@ Based on LiteIO, unallocated storage within servers can be dynamically distribut
 
 For example, there are two types of servers: compute-intensive 96C 4T and storage-intensive 64C 20T. Assuming that the CPU of the storage model has been allocated, with 5T disk space left, while the compute model still has avaiable CPU but no disks to allocate. Using LiteIO, it is possible to combine the CPU of the compute model with the remaining disk space of the storage model into a new container to provide services, thus enhancing the efficiency of both computational and storage capacities.
 
-## General storage and computing separation
+## General Storage And Computing Separation
 
 LiteIO is a general storage service technology, which acts on storage logic volumes, in conjunction with K8S, the storage perceived by upper-layer containers or applications is indistinguishable from that of local disks. Whether it is direct read/write to block devices (bdev) or formatting the block devices into any file system, no modifications are required from upper-layer services. Databases such as OceanBase, MySQL, PostgreSQL, or applications written in Java, Python, or Go can utilize it as a regular disk.
 
@@ -57,7 +57,7 @@ LiteIO's general storage and computing separation capability simplifies scaling 
 ## **High Performance Protocol**
 LitelO uses the NVMe-oF protocol to improve performance. NVME-oF protocol can take full advantage of the inherent parallelism and multi-queue functions of cutting-edge NVMe devices. In contrast, when accessing NVMe SSDs, iSCSI incurs a performance loss of up to 40%, and additional operations such as protocol conversion consume over 30% of CPU resources. NVMe-oF outperforms iSCSI, offering performance that is comparable to locally connected NVMe SSDs. Consequently, the adoption of NVMe-oF in LiteIO minimizes overhead when accessing storage resources within a pool, delivering high-performance akin to that of native disks. LiteIO utilizes NVMe over Fabric (TCP) as its remote storage protocol, facilitating access to storage resources by other nodes within the cluster.
 
-## **Simplified IO Link**
+## **Simplified IO Pipeline**
 In the traditional distributed storage architecture, a Write IO operation involves three steps: querying metadata, writing metadata, and writing multiple data replicas, which requires numerous network interactions. In the LitelO architecture, due to the single-replica mechanism, point-to-point access, and one-to-one mapping between frontend bdevs and backend volumes, no additional rootserver or metaserver is required to manage global metadata. The IO path entails only a single network traverse, eliminating the data transmission delays and amplification issues associated with multiple replica writes. which makes LitelO have higher I/O throughput and lower I/O latency.
 
 ## **Zero Copy**
@@ -74,7 +74,7 @@ The overall framework of Target, as depicted below, necessitates the uninterrupt
 
 ![liteio3.png](https://intranetproxy.alipay.com/skylark/lark/0/2024/png/162424/1706754053014-8a6ccb5c-6ce8-4daf-89e1-9c424b3e521f.png#clientId=uc6b5bffa-c969-4&from=ui&id=uc041224e&originHeight=772&originWidth=1406&originalType=binary&ratio=1&rotation=0&showTitle=false&size=313927&status=done&style=none&taskId=u5a5c8d03-03ae-4bb0-b688-0d5cd928728&title=)
 
-## **Hot migration**
+## **Hot Migration**
 
 The volume hot migration feature is designed to transfer volume data from the original Target to a new Target without affecting the business. Once the migration is complete, the Host completes the link switching, thereby enabling a seamless transition of the business to the new Target without any perceived interruption.
 
