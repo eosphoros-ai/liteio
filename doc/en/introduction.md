@@ -92,7 +92,7 @@ In the point-to-point data link mode, it is inevitable that some storage resourc
 
 ## **Thin Provisioning**
 
-LitelO also offers Thin Provisioning capabilities, which enable over-provisioning of storage at the single-machine dimension, making it suitable for storage products like MySQL that do not pre-allocate storage space. Coupled with hot migration capabilities, Thin Provisioning allows for rapid and seamless data migration to nodes with available space when the storage capacity of a single machine is insufficient. Since LitelO is not a distributed storage architecture, the use of Thin Provisioning requires precise control of the over-provisioning ratio and the total amount of over-provisioned resources to ensure that data can be quickly migrated in the event of space constraints, thus preventing damage to business.
+LitelO also offers Thin Provisioning capability, which enable over-provisioning of storage at the single-machine dimension, making it suitable for storage products like MySQL that do not pre-allocate storage space. Coupled with hot migration capabilities, Thin Provisioning allows for rapid and seamless data migration to nodes with available space when the storage capacity of a single machine is insufficient. Since LitelO is not a distributed storage architecture, the use of Thin Provisioning requires precise control of the over-provisioning ratio and the total amount of over-provisioned resources to ensure that data can be quickly migrated in the event of space constraints, thus preventing damage to business.
 
 # **Practice**
 
