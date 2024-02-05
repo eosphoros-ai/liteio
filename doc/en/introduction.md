@@ -10,7 +10,8 @@ We hope to attract more community ideas, only through openness and collaboration
 
 # What Is LiteIO?
 
-![横版组合标.png](https://intranetproxy.alipay.com/skylark/lark/0/2024/png/162424/1706753759142-85c7d65b-c479-458e-b321-936851f874a7.png#clientId=uc6b5bffa-c969-4&from=ui&id=u328b3307&originHeight=1000&originWidth=2000&originalType=binary&ratio=1&rotation=0&showTitle=false&size=86246&status=done&style=none&taskId=u3fdb5574-b547-4b69-86d6-964c3769987&title=)
+![image](https://github.com/eosphoros-ai/liteio/assets/3345293/0b457ff4-ca45-48ef-8551-bfc4f97d4709)
+
 
 LiteIO is a **high-performance and scalable cloud-native block device services**, specifically designed for Kubernetes in hyper-converged architecture. It has been incubated within Ant Group for 3 years and has been widely used in the production environment, providing stable, efficient and scalable disk services for Ant Group's entire data-based and storage-based products.
 
@@ -36,7 +37,8 @@ Traditional distributed storage represents a decent solution, but within the dom
 
 LiteIO adopts a decentralized design paradigm, utilizing the SPDK data engine and the high-performance NVMe-over-Fabric protocol to connect computing nodes directly to remote storage nodes. Through efficient protocol and backend I/O polling, it provides high performance close to local disks. Point-to-point design, in conjunction with Kubernetes' scheduling control, effectively mitigates the impact of single hardware failures on services.
 
-![liteio1.png](https://intranetproxy.alipay.com/skylark/lark/0/2024/png/162424/1706753898600-dc3c0ed5-6296-49b2-8b1d-4a86b81dd5d0.png#clientId=uc6b5bffa-c969-4&from=ui&id=u90530bb2&originHeight=412&originWidth=750&originalType=binary&ratio=1&rotation=0&showTitle=false&size=101068&status=done&style=none&taskId=uf1e7890a-301e-446a-a37a-7c6af3abec2&title=)
+![image](https://github.com/eosphoros-ai/liteio/assets/3345293/3eac3537-1e68-4394-9d42-bc2b274d4e02)
+
 
 ## **FinOps**
 
@@ -64,7 +66,8 @@ In the traditional distributed storage architecture, a Write IO operation involv
 
 When accessing local disks, I/O requests and data are transmitted between NoF-Initiator and NoF-Engine through tcp-loopback, but this process involves several redundant data copies. To eliminate these copies and reduce CPU overhead, we propose an innovative zero copy transmission method for local access to LiteIO. For I/O requests, zero copy transmission uses shared memory between NoF-Initiator and NoF-Engine. For data, we propose a DMA remapping mechanism that allows local storage devices to directly access the application buffers. Zero copy transmission discards the TCP stack, eliminates redundant data copies between the user buffers and the kernel, and achieves near-native performance when accessing local storage resources.
 
-![liteio2.png](https://intranetproxy.alipay.com/skylark/lark/0/2024/png/162424/1706754019764-d9f8ab39-468d-40aa-b3cd-97a24213fdca.png#clientId=uc6b5bffa-c969-4&from=ui&id=u5c769f88&originHeight=726&originWidth=868&originalType=binary&ratio=1&rotation=0&showTitle=false&size=79032&status=done&style=none&taskId=uef8910e5-404d-4a48-b35b-57d46e71c55&title=)
+![image](https://github.com/eosphoros-ai/liteio/assets/3345293/664abe39-4b68-48b5-9f07-f08b5d24c2f4)
+
 
 ## **Hot Upgrade**
 
@@ -72,7 +75,8 @@ Fully considering that LiteIO, as a key link in the data pipeline, will also req
 
 The overall framework of Target, as depicted below, necessitates the uninterrupted maintenance of the NVMe over Fabrics (nvmf) network connection during hot upgrades. Otherwise, the host side will perceive and reconnect or delete the disk symbol. The hot upgrade is implemented by forking a new target process from the existing one and loading the new binary, ensuring that no IO is lost throughout the process. The switchover between the old and new processes should be swift. Based on the simplicity design principle of the hot upgrade framework, during the hot upgrade, the green TCP or RDMA connections illustrated in the diagram below represent the context that must be maintained. Other modules do not need to save the context state. The maintenance of network connections is achieved through the inheritance of file descriptors by the parent and child processes.
 
-![liteio3.png](https://intranetproxy.alipay.com/skylark/lark/0/2024/png/162424/1706754053014-8a6ccb5c-6ce8-4daf-89e1-9c424b3e521f.png#clientId=uc6b5bffa-c969-4&from=ui&id=uc041224e&originHeight=772&originWidth=1406&originalType=binary&ratio=1&rotation=0&showTitle=false&size=313927&status=done&style=none&taskId=u5a5c8d03-03ae-4bb0-b688-0d5cd928728&title=)
+![image](https://github.com/eosphoros-ai/liteio/assets/3345293/d8b3a6c7-213f-49c6-92d9-b7ef5ef8a868)
+
 
 ## **Hot Migration**
 
