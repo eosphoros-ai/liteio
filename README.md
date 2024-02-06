@@ -103,4 +103,6 @@ However, it is important to note that LiteIO does not currently support data rep
 
 Wechat Group QRCode
 
-![Wechat Group](doc/image/wechat_group.JPG)
+<p align="center">
+  <img src="./doc/image/wechat_group.JPG" width="300px" />
+</p>
